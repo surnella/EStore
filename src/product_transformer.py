@@ -1,35 +1,46 @@
-class ProductListTransformer(BaseDBTransformer):
-    def create(self, product_id, product_type, sugar, weight, area, mrp):
-        """Add a new product."""
-        new_row = pd.DataFrame([{
-            "ProductID": product_id,
-            "ProductType": product_type,
-            "SugarContent": sugar,
-            "Weight": weight,
-            "Area": area,
-            "MRP": mrp
-        }])
-        self.data = pd.concat([self.transform(), new_row], ignore_index=True)
-        self.save()
+import pandas as pd
+from src.base_transformer import BaseDBTransformer
+import src.constants as C
+
+class ProductTransformer(BaseDBTransformer):
+    def create(self, *args, **kwargs):
+        if len(args) == 1 and isinstance(args[0], pd.DataFrame):
+            return super().create(args[0])
+        elif len(args) > 1:
+            product_id, product_type, sugar, weight, area, mrp = args
+            new_row = pd.DataFrame([{
+                C.pid: product_id,
+                C.ptyp: product_type,
+                C.sc: sugar,
+                C.wt: weight,
+                C.area: area,
+                C.mrp: mrp
+            }])
+            return super().create(new_row)
+        else:
+            raise ValueError("Invalid arguments to create()")
+
+    def update_df(self, df, mode="append"):
+        super().update(df, mode)
 
     def read(self, product_id=None):
-        """Fetch all products or one by ID."""
+        print(f"Product Transformer read invoked product id = {product_id}")
         df = self.transform()
         if product_id:
-            return df[df["ProductID"] == product_id]
+            return df[df[C.pid] == product_id]
         return df
 
     def update(self, product_id, **kwargs):
-        """Update product attributes."""
+        print(f"Product Transformer update invoked product id = {product_id}, kwargs = {kwargs}")
         df = self.transform()
         for key, val in kwargs.items():
-            df.loc[df["ProductID"] == product_id, key] = val
+            df.loc[df[C.pid] == product_id, key] = val
         self.data = df
         self.save()
 
     def delete(self, product_id):
-        """Delete a product."""
+        print(f"Product Transformer delete invoked product id = {product_id}")
         df = self.transform()
-        df = df[df["ProductID"] != product_id]
+        df = df[df[C.pid] != product_id]
         self.data = df
         self.save()

@@ -1,0 +1,3 @@
+DiscountID,UserID,DiscountCode,DiscountPercent,DiscountStatus
+FD101,101,NEW10,10,0
+NC102,102,SAVE20,20,0
