@@ -23,14 +23,14 @@ class PurchaseTransformer(BaseDBTransformer):
         super().update(df, mode)
 
     def read(self, purchase_id=None):
-        print(f"Purchase Transformer read invoked purchase id = {purchase_id}")
+        # print(f"Purchase Transformer read invoked purchase id = {purchase_id}")
         df = self.transform()
         if purchase_id:
-            return df[df[ C.prcid:] == purchase_id]
+            return df[df[C.prcid].isin(purchase_id)]
         return df
 
     def update(self, purchase_id, **kwargs):
-        print(f"Purchase Transformer update invoked purchase id = {purchase_id}, kwargs = {kwargs}")
+        # print(f"Purchase Transformer update invoked purchase id = {purchase_id}, kwargs = {kwargs}")
         df = self.transform()
         for key, val in kwargs.items():
             df.loc[df[ C.prcid:] == purchase_id, key] = val
@@ -38,7 +38,7 @@ class PurchaseTransformer(BaseDBTransformer):
         self.save()
 
     def delete(self, purchase_id):
-        print(f"Purchase Transformer delete invoked purchase id = {purchase_id}")
+        # print(f"Purchase Transformer delete invoked purchase id = {purchase_id}")
         df = self.transform()
         df = df[df[ C.prcid:] != purchase_id]
         self.data = df

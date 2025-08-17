@@ -24,14 +24,14 @@ class ProductTransformer(BaseDBTransformer):
         super().update(df, mode)
 
     def read(self, product_id=None):
-        print(f"Product Transformer read invoked product id = {product_id}")
+        # print(f"Product Transformer read invoked product id = {product_id}")
         df = self.transform()
         if product_id:
-            return df[df[C.pid] == product_id]
+            return df[df[C.pid].isin(product_id)]
         return df
 
     def update(self, product_id, **kwargs):
-        print(f"Product Transformer update invoked product id = {product_id}, kwargs = {kwargs}")
+        # print(f"Product Transformer update invoked product id = {product_id}, kwargs = {kwargs}")
         df = self.transform()
         for key, val in kwargs.items():
             df.loc[df[C.pid] == product_id, key] = val
@@ -39,7 +39,7 @@ class ProductTransformer(BaseDBTransformer):
         self.save()
 
     def delete(self, product_id):
-        print(f"Product Transformer delete invoked product id = {product_id}")
+        # print(f"Product Transformer delete invoked product id = {product_id}")
         df = self.transform()
         df = df[df[C.pid] != product_id]
         self.data = df

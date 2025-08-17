@@ -28,14 +28,14 @@ class DiscountTransformer(BaseDBTransformer):
         super().update(df, mode)
 
     def read(self, discount_id=None):
-        print(f"Discount Transformer read invoked discount id = {discount_id}")
+        # print(f"Discount Transformer read invoked discount id = {discount_id}")
         df = self.transform()
         if discount_id:
-            return df[df[C.did] == discount_id]
+            return df[df[C.did].isin(discount_id)]
         return df
 
     def update(self, discount_id, **kwargs):
-        print(f"Discount Transformer update invoked discount id = {discount_id}, kwargs = {kwargs}, len(args) = {len(kwargs)}")
+        # print(f"Discount Transformer update invoked discount id = {discount_id}, kwargs = {kwargs}, len(args) = {len(kwargs)}")
         df = self.transform()
         for key, val in kwargs.items():
             df.loc[df[C.did] == discount_id, key] = val
@@ -43,7 +43,7 @@ class DiscountTransformer(BaseDBTransformer):
         self.save()
 
     def delete(self, discount_id):
-        print(f"Discount Transformer delete invoked discount id = {discount_id}")
+        # print(f"Discount Transformer delete invoked discount id = {discount_id}")
         df = self.transform()
         df = df[df[C.did] != discount_id]
         self.data = df
