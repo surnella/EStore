@@ -4,6 +4,9 @@
 # Ignore all `.log` files
 *.PNG
 *.html
+*.PDF
+*.CSV
+*.csv
 
 # Ignore a folder and everything in it
 backend_files/

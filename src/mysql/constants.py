@@ -1,7 +1,7 @@
 
 # Product-related constants
-pid = "ProductID"
-pname = "ProductName"
+pid = "PRODUCT_ID"
+pname = "PRODUCT_DESC"
 
 # Cart-related constants
 cid = "CartID"
@@ -13,11 +13,14 @@ prcid = "PaymentID"
 # Discount-related constants
 dcode = "DiscountCode"
 
-ptyp = "ProductType"
-sc = "SugarContent"
-wt = "Weight"
-area = "Area"
-mrp = "MRP"
+ptyp = "PRODUCT_CLASS_CODE"
+pavl = "PRODUCT_QUANTITY_AVAIL"
+plen = "LEN"
+wt = "WEIGHT"
+wd = "WIDTH"
+ht = "HEIGHT"
+mrp = "PRODUCT_PRICE"
+
 crtid = "CartID"
 qnt = "Quantity"
 dpct = "DiscountPercent"
