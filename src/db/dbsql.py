@@ -1,10 +1,17 @@
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine, MetaData, URL
 from sqlalchemy.orm import sessionmaker
 
 # Connection string (only thing you change if DB changes!)
-DATABASE_URL = "mysql+mysqlconnector://root:root@localhost/ORDERS"
+url_object = URL.create(
+    drivername="mysql+mysqlconnector",
+    username="root",
+    password="root@321",  # raw password, no need to encode
+    host="localhost",
+    database="ORDERS"
+)
 
-engine = create_engine(DATABASE_URL, echo=False)
+engine = create_engine(url_object, echo=False)
+
 SessionLocal = sessionmaker(bind=engine)
 
 # Reflect the schema
