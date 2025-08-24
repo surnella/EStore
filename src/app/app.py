@@ -1,3 +1,14 @@
+# from fastapi import FastAPI
+# from service import ProductService
+
+# app = FastAPI()
+
+# @app.get("/products/class/{class_id}")
+# def get_products(class_id: int):
+#     products = ProductService.list_products_in_class(class_id)
+#     return {"products": products}
+
+
 from flask import Flask, request, jsonify
 from product_transformer import ProductDBTransformer
 from cart_transformer import CartDBTransformer

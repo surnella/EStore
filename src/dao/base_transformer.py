@@ -1,7 +1,7 @@
 import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import Table, MetaData, delete, select, update
-from db import SessionLocal, Product, ProductClass
+from db.dbsql import SessionLocal, Product, ProductClass
 import db.constants as C
 
 class BaseDBTransformer:
