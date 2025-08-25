@@ -119,7 +119,7 @@ DROP TABLE IF EXISTS `discounts`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `discounts` (
-  `DISCOUNT_ID` varchar(20) NOT NULL DEFAULT '00000',
+  `DISCOUNT_ID` varchar(20) NOT NULL DEFAULT '1000',
   `ORDER_ID` int NOT NULL,
   `CUSTOMER_ID` int DEFAULT NULL,
   `DISCOUNT_CODE` varchar(20) DEFAULT NULL,
@@ -133,7 +133,7 @@ CREATE TABLE `discounts` (
 
 LOCK TABLES `discounts` WRITE;
 /*!40000 ALTER TABLE `discounts` DISABLE KEYS */;
-INSERT INTO `discounts` VALUES ('00000',10001,1,'NO_DISCOUNT',-1,0);
+INSERT INTO `discounts` VALUES ('1000',10001,0,'NO_DISCOUNT',-1,1);
 /*!40000 ALTER TABLE `discounts` ENABLE KEYS */;
 UNLOCK TABLES;
 

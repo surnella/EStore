@@ -164,6 +164,7 @@ class BaseDBTransformer:
         except Exception as e:
             print(f"Error inserting into {tname}:", e)
             raise
+        return None
 
     @staticmethod
     def update(tname: str, pk_value, update_dict: dict, pk_column: str = None):
@@ -184,6 +185,7 @@ class BaseDBTransformer:
         except Exception as e:
             print(f"Error updating {tname}:", e)
             raise
+        return pk_value
 
     @staticmethod
     def delete(tname: str, pk_value, pk_column: str = None):
@@ -203,6 +205,7 @@ class BaseDBTransformer:
         except Exception as e:
             print(f"Error deleting from {tname}:", e)
             raise
+        return pk_value
     
 
     def upsert(tname: str, update_dict: dict, inc_key: str):
@@ -238,6 +241,7 @@ class BaseDBTransformer:
             session.rollback()
             print(f"IntegrityError: {e}")
             raise
+        return None
 
 
 
