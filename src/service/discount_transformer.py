@@ -9,3 +9,9 @@ class DiscountTransformer():
         rows = BaseDBTransformer.read(C.discounts, **{C.custid: cust_id})
         # Transform into dictionaries for JSON/UI
         return rows
+    
+    @staticmethod
+    def list_all_codes():
+        rows = BaseDBTransformer.read(C.discounts)
+        # Transform into dictionaries for JSON/UI
+        return rows

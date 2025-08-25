@@ -26,6 +26,8 @@ dpct = "DISCOUNT_PERCENT"
 did = "DISCOUNT_ID"
 tamt = "TotalAmount"
 dst = "DISCOUNT_STATUS"
+pmode= "PAYMENT_MODE"
+shipid = "SHIPPER_ID"
 
 prd =  "product"
 prdc = "product_class"

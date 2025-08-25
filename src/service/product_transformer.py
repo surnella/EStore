@@ -24,3 +24,11 @@ class ProductTransformer():
         rows = BaseDBTransformer.read(C.prd)
         # Transform into dictionaries for JSON/UI
         return rows
+    
+    @staticmethod    
+    def getRandomProducts(num=3, debug=False):
+        products = ProductTransformer.list_all_products()
+        if (debug):
+            print(products.shape)
+            print(products.head())
+        return products.sample(n=num)

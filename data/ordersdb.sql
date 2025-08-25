@@ -87,7 +87,7 @@ DROP TABLE IF EXISTS `order_header`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `order_header` (
-  `ORDER_ID` int NOT NULL,
+  `ORDER_ID` int NOT NULL AUTO_INCREMENT,
   `CUSTOMER_ID` int DEFAULT NULL,
   `PAYMENT_MODE` varchar(20) DEFAULT NULL,
   `SHIPPER_ID` int DEFAULT NULL,
@@ -119,7 +119,7 @@ DROP TABLE IF EXISTS `discounts`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `discounts` (
-  `DISCOUNT_ID` varchar(20) NOT NULL,
+  `DISCOUNT_ID` varchar(20) NOT NULL DEFAULT '00000',
   `ORDER_ID` int NOT NULL,
   `CUSTOMER_ID` int DEFAULT NULL,
   `DISCOUNT_CODE` varchar(20) DEFAULT NULL,
@@ -133,7 +133,7 @@ CREATE TABLE `discounts` (
 
 LOCK TABLES `discounts` WRITE;
 /*!40000 ALTER TABLE `discounts` DISABLE KEYS */;
-INSERT INTO `discounts` VALUES ('10001_1',10001,1,'NO_DISCOUNT',-1,0),('10002_2',10002,2,'NO_DISCOUNT',-1,0);
+INSERT INTO `discounts` VALUES ('00000',10001,1,'NO_DISCOUNT',-1,0);
 /*!40000 ALTER TABLE `discounts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -151,7 +151,8 @@ CREATE TABLE `cart_items` (
   KEY `PRODUCT_ID` (`PRODUCT_ID`),
   KEY `FKEY_CUSTID` (`CUSTOMER_ID`),
   CONSTRAINT `cart_items_ibfk_1` FOREIGN KEY (`PRODUCT_ID`) REFERENCES `product` (`PRODUCT_ID`),
-  CONSTRAINT `FKEY_CUSTID` FOREIGN KEY (`CUSTOMER_ID`) REFERENCES `online_customer` (`CUSTOMER_ID`)
+  CONSTRAINT `FKEY_CUSTID` FOREIGN KEY (`CUSTOMER_ID`) REFERENCES `online_customer` (`CUSTOMER_ID`),
+  CONSTRAINT `UNIQ_CUST_PROD_ID` UNIQUE (`PRODUCT_ID`, `CUSTOMER_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

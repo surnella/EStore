@@ -1,6 +1,8 @@
 import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import Table, MetaData, delete, select, update
+from sqlalchemy.dialects.mysql import insert
+from sqlalchemy.exc import IntegrityError
 from db.dbsql import SessionLocal, Tables
 # Import all the tables as classes. Putting here make it available for all the upper layers. 
 from db.dbsql import Product, ProductClass, Address, Customer, Items, Orders, Shipper, Cart, Discount
@@ -74,7 +76,7 @@ class BaseDBTransformer:
         except Exception as e:
             print("Error getting products by calss as df:", e)
             raise
-        
+
 # -------------------------GENERIC TABLE METHODS -----------------------------------------------------
     @staticmethod
     def read(tname: str, *args, **kwargs):
@@ -201,3 +203,41 @@ class BaseDBTransformer:
         except Exception as e:
             print(f"Error deleting from {tname}:", e)
             raise
+    
+
+    def upsert(tname: str, update_dict: dict, inc_key: str):
+        """
+        Generic MySQL update that inserts values into table.
+        If a duplicate key occurs, increments the given key column.
+        
+        :param tname: SQLAlchemy Table object
+        :param update_dict: dict of column_name -> value for insert
+        :param inc_key: str name of the column to increment on duplicate
+        """
+
+        tableC = Tables[tname]
+        if tableC is None:
+            raise ValueError(f"Table {tname} not found")
+        if inc_key not in tableC.c:
+            raise ValueError(f"Column {inc_key} not found in {tableC.name}")
+
+        # stmt = tableC.insert().values(**update_dict)
+        stmt = insert(tableC).values(**update_dict)
+        # increment column on duplicate key
+        stmt = stmt.on_duplicate_key_update(
+            **{
+                inc_key: tableC.c[inc_key] + stmt.inserted[inc_key]
+            }
+        )
+        try:
+            with SessionLocal() as session:
+                result = session.execute(stmt)
+                session.commit()
+                return result.inserted_primary_key[0] if result.inserted_primary_key else None
+        except IntegrityError as e:
+            session.rollback()
+            print(f"IntegrityError: {e}")
+            raise
+
+
+
