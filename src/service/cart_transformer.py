@@ -5,10 +5,7 @@ import db.constants as C
 class CartTransformer():
 
     @staticmethod
-    def list_products_in_class(class_id: int):
-        rows = BaseDBTransformer.get_products_by_class(class_id)
+    def list_cart_items():
+        rows = BaseDBTransformer.read(C.cart)
         # Transform into dictionaries for JSON/UI
-        return [
-            {"id": row.Product.id, "name": row.Product.name, "price": row.Product.price}
-            for row in rows
-        ]
+        return rows

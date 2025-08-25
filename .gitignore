@@ -6,7 +6,10 @@
 *.html
 *.PDF
 *.csv
+*.pyc
+*.pyo
+*.pyd
 
-# Ignore a folder and everything in it
-backend_files/
-frontend_files/
+# Ignore all __pycache__ folders
+__pycache__/
+*/__pycache__/

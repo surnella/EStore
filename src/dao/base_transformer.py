@@ -1,7 +1,9 @@
 import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import Table, MetaData, delete, select, update
-from db.dbsql import SessionLocal, Product, ProductClass
+from db.dbsql import SessionLocal, Tables
+# Import all the tables as classes. Putting here make it available for all the upper layers. 
+from db.dbsql import Product, ProductClass, Address, Customer, Items, Orders, Shipper, Cart, Discount
 import db.constants as C
 
 class BaseDBTransformer:
@@ -10,10 +12,192 @@ class BaseDBTransformer:
         """Return all products for a given product_class_id."""
         stmt = (
             select(Product)
-            .join(ProductClass, Product.c.product_class_id == ProductClass.c.id)
-            .where(ProductClass.c.id == class_id)
+            .join(ProductClass, Product.c.PRODUCT_CLASS_CODE == ProductClass.c.PRODUCT_CLASS_CODE)
+            .where(ProductClass.c.PRODUCT_CLASS_CODE == class_id)
         )
+        try:
+            with SessionLocal() as session:
+                result = session.execute(stmt).fetchall()
+                return result  # list of Row objects
+        except Exception as e:
+            print("Error getting products by class as list:", e)
+            raise
 
-        with SessionLocal() as session:
-            result = session.execute(stmt).fetchall()
-            return result  # list of Row objects
+    @staticmethod
+    def insert_product(product_data: dict):
+        stmt = Product.insert().values(**product_data)
+        try:
+            with SessionLocal() as session:
+                result = session.execute(stmt)
+                session.commit()
+                return result.inserted_primary_key[0]
+        except Exception as e:
+            print("Error inserting product:", e)
+            raise
+
+    @staticmethod
+    def update_product(pk_value: int, update_dict: dict, pk_column=Product.c.PRODUCT_ID):
+        stmt = Product.update().where(pk_column == pk_value).values(**update_dict)
+        try:
+            with SessionLocal() as session:
+                session.execute(stmt)
+                session.commit()
+        except Exception as e:
+            print("Error updating product:", e)
+            raise
+
+    @staticmethod
+    def delete_product(pk_value: int, pk_column=Product.c.PRODUCT_ID):
+        stmt = Product.delete().where(pk_column == pk_value)
+        try:
+            with SessionLocal() as session:
+                session.execute(stmt)
+                session.commit()
+        except Exception as e:
+            print("Error deleting product:", e)
+            raise
+
+    @staticmethod
+    def get_products_by_class_df(class_id: int):
+        # Build SQLAlchemy Core select statement
+        stmt = (
+            select(Product)
+            .join(ProductClass, Product.c.PRODUCT_CLASS_CODE == ProductClass.c.PRODUCT_CLASS_CODE)
+            .where(ProductClass.c.PRODUCT_CLASS_CODE == class_id)
+        )
+        try:
+            # Use a session to get a connection
+            with SessionLocal() as session:
+                conn = session.connection()
+                df = pd.read_sql_query(stmt, conn) 
+                return df
+        except Exception as e:
+            print("Error getting products by calss as df:", e)
+            raise
+        
+# -------------------------GENERIC TABLE METHODS -----------------------------------------------------
+    @staticmethod
+    def read(tname: str, *args, **kwargs):
+        """
+        Read rows from a table as a DataFrame.
+
+        Usage:
+        - read("products") → all rows
+        - read("products", 123) → filter by PK = 123
+        - read("products", PRODUCT_CLASS_CODE=45) → filter by column
+        - read("products", PRODUCT_CLASS_CODE=45, STATUS="ACTIVE") → multiple filters
+        """
+        tableC = Tables[tname]
+        if tableC is None:
+            return None
+
+        stmt = select(tableC)
+
+        # Case 1: single positional arg -> assume primary key
+        if len(args) == 1 and not kwargs:
+            pk_col = list(tableC.primary_key)[0]
+            stmt = stmt.where(pk_col == args[0])
+
+        # Case 2: keyword args -> filters on given columns
+        elif kwargs:
+            for col_name, val in kwargs.items():
+                if col_name in tableC.c:
+                    stmt = stmt.where(tableC.c[col_name] == val)
+                else:
+                    raise ValueError(f"Column {col_name} not found in table {tname}")
+
+        try:
+            with SessionLocal() as session:
+                conn = session.connection()
+                df = pd.read_sql_query(stmt, conn)
+                return df
+        except Exception as e:
+            print(f"Error reading {tname}:", e)
+            raise
+    
+    @staticmethod
+    def readf(tname: str, **filters):
+        """Read rows with Django-style filters (supports gte, lte, contains, etc)."""
+        tableC = Tables[tname]
+        if tableC is None:
+            return None
+
+        stmt = select(tableC)
+
+        for col_expr, val in filters.items():
+            # Split column and operator
+            if "__" in col_expr:
+                col_name, op = col_expr.split("__", 1)
+            else:
+                col_name, op = col_expr, "eq"
+
+            if op not in C.OPERATORS:
+                raise ValueError(f"Unsupported filter operator: {op}")
+
+            # Apply operator
+            stmt = stmt.where(C.OPERATORS[op](tableC.c[col_name], val))
+
+        try:
+            with SessionLocal() as session:
+                conn = session.connection()
+                df = pd.read_sql_query(stmt, conn)
+                return df
+        except Exception as e:
+            print("Error getting filtered rows as df:", e)
+            raise
+
+    @staticmethod
+    def insert(tname: str, data: dict):
+        """Insert a row into the given table."""
+        tableC = Tables[tname]
+        if tableC is None:
+            raise ValueError(f"Table {tname} not found")
+
+        stmt = tableC.insert().values(**data)
+        try:
+            with SessionLocal() as session:
+                result = session.execute(stmt)
+                session.commit()
+                return result.inserted_primary_key[0] if result.inserted_primary_key else None
+        except Exception as e:
+            print(f"Error inserting into {tname}:", e)
+            raise
+
+    @staticmethod
+    def update(tname: str, pk_value, update_dict: dict, pk_column: str = None):
+        """Update a row in the given table using primary key (or provided column)."""
+        tableC = Tables[tname]
+        if tableC is None:
+            raise ValueError(f"Table {tname} not found")
+
+        # Default: assume first PK column if not explicitly passed
+        if pk_column is None:
+            pk_column = list(tableC.primary_key.columns)[0].name
+
+        stmt = tableC.update().where(tableC.c[pk_column] == pk_value).values(**update_dict)
+        try:
+            with SessionLocal() as session:
+                session.execute(stmt)
+                session.commit()
+        except Exception as e:
+            print(f"Error updating {tname}:", e)
+            raise
+
+    @staticmethod
+    def delete(tname: str, pk_value, pk_column: str = None):
+        """Delete a row from the given table using primary key (or provided column)."""
+        tableC = Tables[tname]
+        if tableC is None:
+            raise ValueError(f"Table {tname} not found")
+
+        if pk_column is None:
+            pk_column = list(tableC.primary_key.columns)[0].name
+
+        stmt = tableC.delete().where(tableC.c[pk_column] == pk_value)
+        try:
+            with SessionLocal() as session:
+                session.execute(stmt)
+                session.commit()
+        except Exception as e:
+            print(f"Error deleting from {tname}:", e)
+            raise
