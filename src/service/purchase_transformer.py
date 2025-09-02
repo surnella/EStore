@@ -29,15 +29,19 @@ class PurchaseTransformer():
         ordh_dict[C.shipid] = shipper_id
         ordh_dict[C.did] = '1000' # This is dummy code used for orders done without discount. 1000 is -1 percent discount and status 1;
 
+        # Step 1: Check if there are items in the cart.
         try:
             cust_cart = BaseDBTransformer.read(C.cart, **{C.custid: cust_id})
             if( len(cust_cart) <= 0):
                 print("Cart is Empty, Nothing to Purcahase, Aborting ")
                 return None
+            
+            #Step 2: Items in the cart. Create an Order id. 
             res = BaseDBTransformer.insert(C.orders,ordh_dict)
             if(debug):
                 print("Order id created = ", res)
 
+            # iterate all the items
             for i, dict in enumerate(cust_cart.to_dict(orient='records')):
                 ordi_dict = {}
                 ordi_dict[C.ordid] = res
@@ -49,8 +53,8 @@ class PurchaseTransformer():
         except Exception as e:
             print("Error  while creating order id and order items. Undoing inserts:", e)
             if( res > 0):
-                BaseDBTransformer.delete(C.orders, res, C.custid)
-                BaseDBTransformer.delete(C.items, res, C.custid)
+                BaseDBTransformer.delete(C.orders, res)
+                BaseDBTransformer.delete(C.items, res)
             raise
 
         try: 
@@ -111,12 +115,12 @@ class PurchaseTransformer():
         # This is the case when discount is applied. Discount_id is passed The percent is retrieved and applied.
         # Admin APIs will update the percentage. 
 
-        #Check if discount is valid. 
+        # Step 0: Check if discount is valid. If not then use normal purchase APIs.
         row = BaseDBTransformer.readf(C.discounts, **{C.dpct + "__gt":0, C.dst + "__eq":0, C.did + "__eq":discount_id})
 
         if (len(row) <=0 ):
             print("Discount_id is not valid, default to purcahse without discount")
-            PurchaseTransformer.purchase_cart_items(cust_id, shipper_id, pay_mode, debug)
+            return PurchaseTransformer.purchase_cart_items(cust_id, shipper_id, pay_mode, debug)
         
         disc_dict = row.to_dict(orient='records')[0]
         print( "Valid discount id = ", disc_dict)
@@ -130,15 +134,19 @@ class PurchaseTransformer():
         ordh_dict[C.shipid] = shipper_id
         ordh_dict[C.did] = disc_dict[C.did]
 
+        # Step - 1 check if there are items in cart to purchase
         try:
             cust_cart = BaseDBTransformer.read(C.cart, **{C.custid: cust_id})
             if( len(cust_cart) <= 0):
                 print("Cart is Empty, Nothing to Purcahase, Aborting ")
                 return None
+            
+            # Step - 2 - There are items so create an order_id. 
             res = BaseDBTransformer.insert(C.orders,ordh_dict)
             if(debug):
                 print("Order id created = ", res)
 
+            # Step 3 - Now add the cart items into order items to complete purchase. 
             for i, dict in enumerate(cust_cart.to_dict(orient='records')):
                 ordi_dict = {}
                 ordi_dict[C.ordid] = res
@@ -150,14 +158,18 @@ class PurchaseTransformer():
         except Exception as e:
             print("Error  while creating order id and order items. Undoing inserts:", e)
             if( res > 0):
-                BaseDBTransformer.delete(C.orders, res, C.custid)
-                BaseDBTransformer.delete(C.items, res, C.custid)
+                BaseDBTransformer.delete(C.orders, res)
+                BaseDBTransformer.delete(C.items, res)
             raise
+
+        # Step 4: Empty the cart now as the purchase is done. 
         try: 
             PurchaseTransformer.empty_cart(cust_id, debug)
         except Exception as e:
             print("Error  while Emptying cart. purchase completed Order Id = ", res, e)
             raise
+
+        # Step 5: Mark the discount coupon as used. 
         try: 
             PurchaseTransformer.discount_coupon_used(discount_id, debug)
         except Exception as e:

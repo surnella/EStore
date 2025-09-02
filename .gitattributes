@@ -1,0 +1,3 @@
+*.ipynb diff=jupyternotebook      # tells Git how to show diffs for notebooks
+*.ipynb filter=nbstripout         # strips output cells before committing
+*.ipynb merge=jupyternotebook     # uses a custom merge driver for notebooks

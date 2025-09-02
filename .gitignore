@@ -9,7 +9,11 @@
 *.pyc
 *.pyo
 *.pyd
+*.vscode
+*.joblib
 
 # Ignore all __pycache__ folders
 __pycache__/
 */__pycache__/
+backend_files/
+frontend_files/
