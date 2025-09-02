@@ -9,7 +9,7 @@ class ProductTransformer():
         rows = BaseDBTransformer.get_products_by_class(class_id)
         # Transform into dictionaries for JSON/UI
         return [
-            {C.pid: row.PRODUCT_CLASS_CODE, C.pname: row.PRODUCT_DESC, C.mrp: row.PRODUCT_PRICE}
+            {C.pid: row.PRODUCT_ID, C.pname: row.PRODUCT_DESC, C.pavl: row.PRODUCT_QUANTITY_AVAIL, C.prdc: row.PRODUCT_CLASS_CODE, C.pname: row.PRODUCT_DESC, C.mrp: row.PRODUCT_PRICE}
             for row in rows
         ]
     
@@ -20,8 +20,16 @@ class ProductTransformer():
         return rows
 
     @staticmethod
-    def list_all_products():
-        rows = BaseDBTransformer.read(C.prd)
+    def list_all_products(prd_id=None):
+        if (prd_id is None):
+            rows = BaseDBTransformer.read(C.prd)
+        else:
+            rows = BaseDBTransformer.read(C.prd, prd_id)
+        return rows
+
+    @staticmethod
+    def get_products_class():
+        rows = BaseDBTransformer.read(C.prdc)
         # Transform into dictionaries for JSON/UI
         return rows
     

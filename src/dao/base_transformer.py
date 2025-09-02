@@ -9,6 +9,8 @@ from db.dbsql import Product, ProductClass, Address, Customer, Items, Orders, Sh
 import db.constants as C
 
 class BaseDBTransformer:
+    debug=False;
+
     @staticmethod
     def get_products_by_class(class_id: int):
         """Return all products for a given product_class_id."""
@@ -16,6 +18,20 @@ class BaseDBTransformer:
             select(Product)
             .join(ProductClass, Product.c.PRODUCT_CLASS_CODE == ProductClass.c.PRODUCT_CLASS_CODE)
             .where(ProductClass.c.PRODUCT_CLASS_CODE == class_id)
+        )
+        try:
+            with SessionLocal() as session:
+                result = session.execute(stmt).fetchall()
+                return result  # list of Row objects
+        except Exception as e:
+            print("Error getting products by class as list:", e)
+            raise
+
+    @staticmethod
+    def get_products_class():
+        """Return all products for a given product_class_id."""
+        stmt = (
+            select(ProductClass)
         )
         try:
             with SessionLocal() as session:
@@ -107,8 +123,9 @@ class BaseDBTransformer:
                     stmt = stmt.where(tableC.c[col_name] == val)
                 else:
                     raise ValueError(f"Column {col_name} not found in table {tname}")
-
         try:
+            if(BaseDBTransformer.debug):
+                print("Read : Fetching in table ", str, " Criteria = ", stmt)
             with SessionLocal() as session:
                 conn = session.connection()
                 df = pd.read_sql_query(stmt, conn)
@@ -123,7 +140,6 @@ class BaseDBTransformer:
         tableC = Tables[tname]
         if tableC is None:
             return None
-
         stmt = select(tableC)
 
         for col_expr, val in filters.items():
@@ -138,8 +154,9 @@ class BaseDBTransformer:
 
             # Apply operator
             stmt = stmt.where(C.OPERATORS[op](tableC.c[col_name], val))
-
         try:
+            if(BaseDBTransformer.debug):
+                print("ReadF : Fetching in table ", str, " Criteria = ", stmt)
             with SessionLocal() as session:
                 conn = session.connection()
                 df = pd.read_sql_query(stmt, conn)

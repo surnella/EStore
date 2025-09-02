@@ -58,7 +58,7 @@ class PurchaseTransformer():
             raise
 
         try: 
-            PurchaseTransformer.empty_cart(cust_id, debug)
+            PurchaseTransformer.empty_cart_after_purchase(cust_id, debug)
         except Exception as e:
             print("Error  while Emptying cart. purchase completed Order Id = ", res, e)
             raise
@@ -70,12 +70,34 @@ class PurchaseTransformer():
             raise
 
         return res
-
+    
     @staticmethod
     def empty_cart(cust_id, debug=False):
         # purchase is completed - Empty cart and Return Order ID. 
         try:
             BaseDBTransformer.delete(C.cart, cust_id, C.custid)
+        except Exception as e:
+            raise
+        return None
+
+    @staticmethod
+    def empty_cart_after_purchase(cust_id, debug=False):
+        # purchase is completed - First update the Availibility values in the product. Empty cart and Return Order ID. 
+        try:
+            cust_cart = BaseDBTransformer.read(C.cart, **{C.custid: cust_id})
+            if( len(cust_cart) <= 0):
+                print("Cart is already Empty, Aborting ")
+                return None
+            for i, dict in enumerate(cust_cart.to_dict(orient='records')):
+                prd_df = BaseDBTransformer.read(C.prd, dict[C.pid])
+                prd_dict = prd_df.iloc[0].to_dict()
+                prd_dict[C.pavl] = int(prd_dict[C.pavl]) - int( dict[C.qnt])
+                res = BaseDBTransformer.update(C.prd, dict[C.pid], prd_dict)
+                if(debug):
+                    print( i, ": Update product availibility for ", dict[C.pid], " New:Change = ", 
+                          prd_dict[C.pavl] , ":",dict[C.qnt], " Return value = ", res)
+            # Now empty the cart. 
+            PurchaseTransformer.empty_cart(cust_id, debug)
         except Exception as e:
             raise
         return None
@@ -164,7 +186,7 @@ class PurchaseTransformer():
 
         # Step 4: Empty the cart now as the purchase is done. 
         try: 
-            PurchaseTransformer.empty_cart(cust_id, debug)
+            PurchaseTransformer.empty_cart_after_purchase(cust_id, debug)
         except Exception as e:
             print("Error  while Emptying cart. purchase completed Order Id = ", res, e)
             raise

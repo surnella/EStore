@@ -24,7 +24,7 @@ class DiscountTransformer():
         row = BaseDBTransformer.readf(C.discounts, **{C.dpct + "__gte":0, C.dst + "__eq":0, C.did + "__eq":discount_id})  
         if(debug):
             print(row) 
-        if( ( len(row) < 0) | (percent <= 0)):
+        if( (len(row) < 0) | (percent <= 0)):
             return None
         disc_dict = row.to_dict(orient='records')[0]
         if(debug):
