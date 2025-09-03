@@ -1,15 +1,17 @@
 import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import Table, MetaData, delete, select, update
+from sqlalchemy.orm import Session
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.exc import IntegrityError
 from db.dbsql import SessionLocal, Tables
+from db.dbutil import transaction
 # Import all the tables as classes. Putting here make it available for all the upper layers. 
 from db.dbsql import Product, ProductClass, Address, Customer, Items, Orders, Shipper, Cart, Discount
 import db.constants as C
 
 class BaseDBTransformer:
-    debug=False;
+    debug=False
 
     @staticmethod
     def get_products_by_class(class_id: int):
@@ -47,7 +49,7 @@ class BaseDBTransformer:
         try:
             with SessionLocal() as session:
                 result = session.execute(stmt)
-                session.commit()
+                #session.commit()
                 return result.inserted_primary_key[0]
         except Exception as e:
             print("Error inserting product:", e)
@@ -59,7 +61,7 @@ class BaseDBTransformer:
         try:
             with SessionLocal() as session:
                 session.execute(stmt)
-                session.commit()
+                #session.commit()
         except Exception as e:
             print("Error updating product:", e)
             raise
@@ -70,7 +72,7 @@ class BaseDBTransformer:
         try:
             with SessionLocal() as session:
                 session.execute(stmt)
-                session.commit()
+                #session.commit()
         except Exception as e:
             print("Error deleting product:", e)
             raise
@@ -113,8 +115,13 @@ class BaseDBTransformer:
 
         # Case 1: single positional arg -> assume primary key
         if len(args) == 1 and not kwargs:
-            pk_col = list(tableC.primary_key)[0]
+            keylist = list(tableC.primary_key)
+            if (len(keylist) > 0):
+                pk_col = list(tableC.primary_key)[0]
+            else:
+                pk_col = tableC.c[next(iter(tableC.columns.keys()))]
             stmt = stmt.where(pk_col == args[0])
+            # print( " Colum extracted = ", stmt)
 
         # Case 2: keyword args -> filters on given columns
         elif kwargs:
@@ -166,7 +173,7 @@ class BaseDBTransformer:
             raise
 
     @staticmethod
-    def insert(tname: str, data: dict):
+    def insert_(session: Session, tname: str, data: dict):
         """Insert a row into the given table."""
         tableC = Tables[tname]
         if tableC is None:
@@ -174,17 +181,25 @@ class BaseDBTransformer:
 
         stmt = tableC.insert().values(**data)
         try:
-            with SessionLocal() as session:
+            # with SessionLocal() as session:
                 result = session.execute(stmt)
-                session.commit()
+                #session.commit()
                 return result.inserted_primary_key[0] if result.inserted_primary_key else None
         except Exception as e:
-            print(f"Error inserting into {tname}:", e)
+            print(f"Error insert_ into {tname}: with {dict}", e)
             raise
-        return None
 
     @staticmethod
-    def update(tname: str, pk_value, update_dict: dict, pk_column: str = None):
+    def insert(tname: str, data: dict):
+        try:
+            with transaction() as session:
+                return BaseDBTransformer.insert_(session, tname, data)
+        except Exception as e:
+            print(f"Error insert into {tname}: with {dict}", e)
+            raise
+
+    @staticmethod
+    def update_(session: Session, tname: str, pk_value, update_dict: dict, pk_column: str = None):
         """Update a row in the given table using primary key (or provided column)."""
         tableC = Tables[tname]
         if tableC is None:
@@ -196,16 +211,25 @@ class BaseDBTransformer:
 
         stmt = tableC.update().where(tableC.c[pk_column] == pk_value).values(**update_dict)
         try:
-            with SessionLocal() as session:
+           # with SessionLocal() as session:
                 session.execute(stmt)
-                session.commit()
+                #session.commit()
         except Exception as e:
-            print(f"Error updating {tname}:", e)
+            print(f"Error update_ {tname}:{pk_value} with {update_dict} on {pk_column} ", e)
             raise
         return pk_value
+    
+    @staticmethod
+    def update(tname: str, pk_value, update_dict: dict, pk_column: str = None):
+        try:
+            with transaction() as session:
+                return BaseDBTransformer.update_(session, tname, pk_value, update_dict, pk_column)
+        except Exception as e:
+            print(f"Error update {tname}:{pk_value} with {update_dict} on {pk_column} ", e)
+            raise         
 
     @staticmethod
-    def delete(tname: str, pk_value, pk_column: str = None):
+    def delete_(session: Session, tname: str, pk_value, pk_column: str = None):
         """Delete a row from the given table using primary key (or provided column)."""
         tableC = Tables[tname]
         if tableC is None:
@@ -216,16 +240,24 @@ class BaseDBTransformer:
 
         stmt = tableC.delete().where(tableC.c[pk_column] == pk_value)
         try:
-            with SessionLocal() as session:
+            # with SessionLocal() as session:
                 session.execute(stmt)
-                session.commit()
+                #session.commit()
         except Exception as e:
-            print(f"Error deleting from {tname}:", e)
+            print(f"Error delete_ {tname}:{pk_column} with {pk_value}", e)
             raise
         return pk_value
-    
 
-    def upsert(tname: str, update_dict: dict, inc_key: str):
+    @staticmethod
+    def delete(tname: str, pk_value, pk_column: str = None):
+        try:
+            with transaction() as session:
+                return BaseDBTransformer.delete_(session, tname, pk_value, pk_column)
+        except Exception as e:
+            print(f"Error delete {tname}:{pk_column} with {pk_value}", e)
+            raise         
+
+    def upsert_(session: Session, tname: str, update_dict: dict, inc_key: str):
         """
         Generic MySQL update that inserts values into table.
         If a duplicate key occurs, increments the given key column.
@@ -250,15 +282,20 @@ class BaseDBTransformer:
             }
         )
         try:
-            with SessionLocal() as session:
+            # with SessionLocal() as session:
                 result = session.execute(stmt)
-                session.commit()
+                #session.commit()
                 return result.inserted_primary_key[0] if result.inserted_primary_key else None
-        except IntegrityError as e:
-            session.rollback()
-            print(f"IntegrityError: {e}")
+        except Exception as e:
+            print(f"Upsert_ is failing for {tname}:{inc_key} with {update_dict} {e}")
             raise
         return None
 
-
-
+    def upsert(tname: str, update_dict: dict, inc_key: str):
+        try:
+            with transaction() as session:
+                BaseDBTransformer.upsert_(session, tname, update_dict, inc_key)
+        except Exception as e:
+            print(f"Upsert is failing for {tname}:{inc_key} with {update_dict} {e}")
+            raise
+        return None

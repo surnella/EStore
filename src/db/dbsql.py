@@ -14,8 +14,6 @@ url_object = URL.create(
 
 engine = create_engine(url_object, echo=False)
 
-SessionLocal = sessionmaker(bind=engine)
-
 # Reflect the schema
 metadata = MetaData()
 metadata.reflect(bind=engine)
@@ -32,3 +30,4 @@ Shipper = metadata.tables["shipper"]
 Cart = metadata.tables["cart_items"]
 Discount = metadata.tables["discounts"]
 
+SessionLocal = sessionmaker(bind=engine)

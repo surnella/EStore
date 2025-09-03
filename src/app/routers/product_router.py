@@ -1,60 +1,90 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from service.product_transformer import ProductTransformer
 from schemas.product_schema import ProductResponse, PaginatedProductsResponse, ProductClassResponse
-from typing import List
-
+from typing import List, Optional
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
 @router.get("/", response_model=List[ProductResponse])
 def get_all_products():
-    df = ProductTransformer.list_all_products()
-    return df.to_dict(orient="records")
+    """Retrieves all products."""
+    try:
+        df = ProductTransformer.list_all_products()
+        return df.to_dict(orient="records")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {e}"
+        )
+
 
 @router.get("/classes", response_model=List[ProductClassResponse])
 def list_product_classes():
-    df = ProductTransformer.get_products_class()
-    mapped = df.to_dict(orient="records")
-    return mapped
+    """Lists all available product classes."""
+    try:
+        df = ProductTransformer.get_products_class()
+        return df.to_dict(orient="records")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {e}"
+        )
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
 def get_product(product_id: int):
-    df = ProductTransformer.list_all_products(product_id)
-    return df.to_dict(orient="records")[0]
+    """Retrieves a single product by its ID."""
+    try:
+        # Better to have a dedicated transformer method for a single item lookup
+        product = ProductTransformer.get_product_by_id(product_id)
+        
+        # IMPROVEMENT: Handle 'not found' case properly
+        if not product:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Product with ID {product_id} not found."
+            )
+        
+        return product # Assumed to be a dictionary or Pydantic model
+    except HTTPException as http_exc:
+        # Re-raise the HTTPException
+        raise http_exc
+    except Exception as e:
+        # Catch any other unexpected errors and return a 500 status code
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {e}"
+        )
 
-
-# @router.get("/{product_id}", response_model=ProductResponse)
-# def get_product(product_id: int):
-#     # returns a pandas DataFrame
-#     df = ProductTransformer.list_all_products(product_id)
-#     if df.empty:
-#         raise HTTPException(status_code=404, detail="Product not found")
-    
-#     # Convert first row to dict and map DB column names -> Pydantic field names
-#     product_dict = df.iloc[0].to_dict()
-#     mapped = {
-#         "product_id": product_dict["PRODUCT_ID"],
-#         "product_desc": product_dict["PRODUCT_DESC"],
-#         "product_class_code": product_dict["PRODUCT_CLASS_CODE"],
-#         "product_price": float(product_dict["PRODUCT_PRICE"]) if product_dict["PRODUCT_PRICE"] is not None else None,
-#         "product_quantity_avail": product_dict["PRODUCT_QUANTITY_AVAIL"],
-#         "len": product_dict["LEN"],
-#         "width": product_dict["WIDTH"],
-#         "height": product_dict["HEIGHT"],
-#         "weight": float(product_dict["WEIGHT"]) if product_dict["WEIGHT"] is not None else None
-#     }
-#     return mapped
 
 @router.get("/class/{class_id}", response_model=PaginatedProductsResponse)
-def get_products_in_class(class_id: int):
-    products = ProductTransformer.list_products_in_class_df(class_id)
-    total_count = len(products)
-
-    mapped =  {
-        "total": total_count,
-        "start": 0,
-        "end": total_count,
-        "data": products.to_dict(orient="records")
-    }
-    return mapped
+def get_products_in_class(
+    class_id: int,
+    skip: int = 0,
+    limit: int = 100
+):
+    """
+    Retrieves a paginated list of products within a specific class.
+    """
+    try:
+        # Assumed your transformer now takes `skip` and `limit`
+        products_df = ProductTransformer.list_products_in_class_paginated(
+            class_id,
+            skip=skip,
+            limit=limit
+        )
+        
+        # Get the total count for the entire class (without pagination)
+        total_count = ProductTransformer.get_class_product_count(class_id)
+        
+        return {
+            "total": total_count,
+            "start": skip,
+            "end": skip + len(products_df),
+            "data": products_df.to_dict(orient="records")
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {e}"
+        )

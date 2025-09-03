@@ -145,9 +145,9 @@ DROP TABLE IF EXISTS `cart_items`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `cart_items` (
+  `CUSTOMER_ID` int NOT NULL,
   `PRODUCT_ID` int DEFAULT NULL,
   `PRODUCT_QUANTITY` int DEFAULT NULL,
-  `CUSTOMER_ID` int NOT NULL,
   KEY `PRODUCT_ID` (`PRODUCT_ID`),
   KEY `FKEY_CUSTID` (`CUSTOMER_ID`),
   CONSTRAINT `cart_items_ibfk_1` FOREIGN KEY (`PRODUCT_ID`) REFERENCES `product` (`PRODUCT_ID`),
