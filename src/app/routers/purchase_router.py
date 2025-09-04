@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 router = APIRouter(prefix="/Purchase", tags=["Purchase"])
 
 # A helper function to reduce code duplication
-def _handle_purchase_logic(customer_id: int, discount_id: Optional[int] = None) -> PurchaseResponse:
+def _handle_purchase_logic(customer_id: int, discount_id: Optional[str] = None) -> PurchaseResponse:
     """
     Encapsulates the core purchase logic and error handling.
     """
@@ -17,8 +17,8 @@ def _handle_purchase_logic(customer_id: int, discount_id: Optional[int] = None) 
             oid = PurchaseTransformer.purchase_cart_items(customer_id)
             
         return PurchaseResponse(
-            order_id=oid,
-            message=f"Purchase successful. Order ID: {oid}"
+            ORDER_ID=oid,
+            MESSAGE=f"Purchase successful. Order ID: {oid}"
         )
     except Exception as e:
         # Log the detailed error for debugging
@@ -35,7 +35,7 @@ def purchase_cart(purchase_req: PurchaseRequest):
     """
     Purchases the customer's cart items.
     """
-    return _handle_purchase_logic(purchase_req.customer_id)
+    return _handle_purchase_logic(purchase_req.CUSTOMER_ID)
 
 
 @router.post("/discount", response_model=PurchaseResponse)
@@ -43,4 +43,4 @@ def purchase_discounted_cart(purchase_req: PurchaseDRequest):
     """
     Purchases the customer's cart items with a discount applied.
     """
-    return _handle_purchase_logic(purchase_req.customer_id, purchase_req.discount_id)
+    return _handle_purchase_logic(purchase_req.CUSTOMER_ID, purchase_req.DISCOUNT_ID)

@@ -11,7 +11,7 @@ from db.dbsql import Product, ProductClass, Address, Customer, Items, Orders, Sh
 import db.constants as C
 
 class BaseDBTransformer:
-    debug=False
+    debug=True
 
     @staticmethod
     def get_products_by_class(class_id: int):
@@ -121,7 +121,8 @@ class BaseDBTransformer:
             else:
                 pk_col = tableC.c[next(iter(tableC.columns.keys()))]
             stmt = stmt.where(pk_col == args[0])
-            # print( " Colum extracted = ", stmt)
+            if(BaseDBTransformer.debug):
+                print( " Colum extracted = ", stmt)
 
         # Case 2: keyword args -> filters on given columns
         elif kwargs:

@@ -20,11 +20,15 @@ class ProductTransformer():
         return rows
 
     @staticmethod
-    def list_all_products(prd_id=None):
+    def list_all_products(prd_id=None, debug=False):
+        if(debug):
+            print( " Recevied the product id ", prd_id)
         if (prd_id is None):
             rows = BaseDBTransformer.read(C.prd)
         else:
             rows = BaseDBTransformer.read(C.prd, prd_id)
+        if(debug):
+            print( " retrieved the data rows = ", len(rows))
         return rows
 
     @staticmethod

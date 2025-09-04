@@ -28,17 +28,21 @@ def add_to_cart(request: CartUpdateRequest):
     Adds a list of items to a customer's cart.
     """
     try: 
+        print(request.CUSTOMER_ID)
+        print(request.ITEMS)
         # Pydantic's root validator now handles the validation, so you can remove the for loop
-        CartTransformer.addToCart(request.customer_id, request.items, debug=True)
+        items_as_dicts = [item.model_dump() for item in request.ITEMS]
+        CartTransformer.addToCart(request.CUSTOMER_ID, items_as_dicts, debug=True)
         
+        print( " REturned from addToCart function after upsert")
         # Correctly return the CartResponse object
         return CartResponse(
-            customer_id=request.customer_id,
-            message=f"Add to cart successful for customer {request.customer_id}"
+            CUSTOMER_ID=request.CUSTOMER_ID,
+            MESSAGE=f"Add to cart successful for customer {request.CUSTOMER_ID}"
         )
     except Exception as e:
         # Catch any backend errors and return a 500 status code
-        print(f"Cart addition not successful for customer {request.customer_id}: {e}")
+        print(f"Cart addition not successful for customer {request.CUSTOMER_ID}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred: {e}"
@@ -52,15 +56,16 @@ def update_cart(request: CartUpdateRequest):
     """
     try: 
         # The Pydantic validator handles the validation
-        CartTransformer.updateCart(request.customer_id, request.items, debug=True)
+        items_as_dicts = [item.model_dump() for item in request.ITEMS]
+        CartTransformer.updateCart(request.CUSTOMER_ID, items_as_dicts, debug=True)
 
         return CartResponse(
-            customer_id=request.customer_id,
-            message=f"Cart update successful for customer {request.customer_id}"
+            CUSTOMER_ID=request.CUSTOMER_ID,
+            MESSAGE=f"Cart update successful for customer {request.CUSTOMER_ID}"
         )
     except Exception as e:
         # Catch any backend errors and return a 500 status code
-        print(f"Cart update not successful for customer {request.customer_id}: {e}")
+        print(f"Cart update not successful for customer {request.CUSTOMER_ID}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred: {e}"

@@ -26,7 +26,7 @@ class DiscountTransformer():
         return rows
     
     @staticmethod
-    def enable_discount_codes(discount_id, percent, discount_code, debug=False):
+    def enable_discount_codes(discount_id, percent, discount_code, discount_status=0, debug=False):
         row = BaseDBTransformer.readf(C.discounts, **{C.dpct + "__gte":0, C.dst + "__eq":0, C.did + "__eq":discount_id})  
         if(debug):
             print("enable_discount_codes called with: ", row) 
@@ -38,6 +38,7 @@ class DiscountTransformer():
 
         disc_dict[C.dpct] = percent
         disc_dict[C.dcode] = discount_code
+        disc_dict[C.dst] = discount_status
 
         if(debug):
             print("enable_discount_codes called disocunt dict = : ", disc_dict, type( disc_dict))

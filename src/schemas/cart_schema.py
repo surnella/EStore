@@ -2,21 +2,21 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, model_validator
 
 class CartResponse(BaseModel):
-    customer_id: int
-    message: str
+    CUSTOMER_ID: int
+    MESSAGE: str
 
 class CartItem(BaseModel):
-    product_id: int
-    product_quantity: int
+    PRODUCT_ID: int
+    PRODUCT_QUANTITY: int
     
 class CartUpdateRequest(BaseModel):
-    customer_id: int
-    items: List[CartItem]
+    CUSTOMER_ID: int
+    ITEMS: List[CartItem]
 
     @model_validator(mode='after') # <-- Use @model_validator with mode='after'
     def validate_quantities(self):
-        if self.items:
-            for item in self.items:
-                if item.product_quantity <= 0:
-                    raise ValueError(f"Quantity for product {item.product_id} must be greater than 0")
+        if self.ITEMS:
+            for item in self.ITEMS:
+                if item.PRODUCT_QUANTITY <= 0:
+                    raise ValueError(f"Quantity for product {item.PRODUCT_ID} must be greater than 0")
         return self # <-- must return self
