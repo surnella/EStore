@@ -1,11 +1,12 @@
 import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import Table, MetaData, delete, select, update
+from sqlalchemy import Table, MetaData, delete, select, update, func
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.exc import IntegrityError
 from db.dbsql import SessionLocal, Tables
 from db.dbutil import transaction
+
 # Import all the tables as classes. Putting here make it available for all the upper layers. 
 from db.dbsql import Product, ProductClass, Address, Customer, Items, Orders, Shipper, Cart, Discount
 import db.constants as C
@@ -228,7 +229,24 @@ class BaseDBTransformer:
         except Exception as e:
             print(f"Error update {tname}:{pk_value} with {update_dict} on {pk_column} ", e)
             raise         
+        
+    @staticmethod
+    def tlen_(session: Session, tname: str):
+        tableC = Tables[tname]
+        if tableC is None:
+            raise ValueError(f"Table {tname} not found")
+        stmt = select(func.count()).select_from(tableC)
+        return session.execute(stmt).scalar_one()
 
+    @staticmethod
+    def tlen(tname: str):
+        try:
+            with transaction() as session:
+                return BaseDBTransformer.tlen_(session, tname)
+        except Exception as e:
+            print(f"Error getting number of records {tname}", e)
+            raise
+    
     @staticmethod
     def delete_(session: Session, tname: str, pk_value, pk_column: str = None):
         """Delete a row from the given table using primary key (or provided column)."""
@@ -241,9 +259,9 @@ class BaseDBTransformer:
 
         stmt = tableC.delete().where(tableC.c[pk_column] == pk_value)
         try:
-            # with SessionLocal() as session:
-                session.execute(stmt)
-                #session.commit()
+            result = session.execute(stmt)
+            if( result.rowcount == 0):
+                return None
         except Exception as e:
             print(f"Error delete_ {tname}:{pk_column} with {pk_value}", e)
             raise
@@ -257,7 +275,7 @@ class BaseDBTransformer:
         except Exception as e:
             print(f"Error delete {tname}:{pk_column} with {pk_value}", e)
             raise         
-
+    
     def upsert_(session: Session, tname: str, update_dict: dict, inc_key: str):
         """
         Generic MySQL update that inserts values into table.

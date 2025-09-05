@@ -1,5 +1,5 @@
 # Ignore a specific file
-
+.coverage
 
 # Ignore all `.log` files
 *.PNG
@@ -17,3 +17,5 @@ __pycache__/
 */__pycache__/
 backend_files/
 frontend_files/
+htmlcov/
+.vscode/

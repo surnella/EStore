@@ -3,6 +3,7 @@
 pid = "PRODUCT_ID"
 pname = "PRODUCT_DESC"
 ptyp = "PRODUCT_CLASS_CODE"
+pdesc = "PRODUCT_CLASS_DESC"
 pavl = "PRODUCT_QUANTITY_AVAIL"
 plen = "LEN"
 wt = "WEIGHT"
