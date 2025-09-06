@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from service.product_transformer import ProductTransformer
+from service.product_service import ProductService
 from schemas.product_schema import ProductResponse, PaginatedProductsResponse, ProductClassResponse
 from typing import List, Optional
 
@@ -10,7 +10,7 @@ def get_all_products():
     """Retrieves all products."""
     try:
         print("Entered Products get entry point for get all products ")
-        df = ProductTransformer.list_all_products(23)
+        df = ProductService.list_all_products()
         print ( len(df), "\n", df.iloc[0,:])
         return df.to_dict(orient="records")
     except Exception as e:
@@ -24,7 +24,7 @@ def get_all_products():
 def list_product_classes():
     """Lists all available product classes."""
     try:
-        df = ProductTransformer.get_products_class()
+        df = ProductService.get_products_class()
         return df.to_dict(orient="records")
     except Exception as e:
         raise HTTPException(
@@ -39,7 +39,7 @@ def get_product(product_id: int):
     try:
         print(" Recevied product id = ", product_id)
         # Better to have a dedicated transformer method for a single item lookup
-        product = ProductTransformer.list_all_products(product_id, True)
+        product = ProductService.list_all_products(product_id, True)
         dict = product.to_dict(orient="records")[0]
 
         # IMPROVEMENT: Handle 'not found' case properly
@@ -64,10 +64,10 @@ def get_product(product_id: int):
 @router.get("/class/{class_id}", response_model=List[ProductResponse])
 def get_products_in_class(class_id: int):
     """
-    Retrieves a paginated list of products within a specific class.
+    Retrieves a list of products within a specific class.
     """
     try:
-        df = ProductTransformer.list_products_in_class_df(class_id)
+        df = ProductService.list_products_in_class_df(class_id)
         return df.to_dict(orient="records")
     except Exception as e:
         raise HTTPException(

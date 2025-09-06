@@ -16,6 +16,10 @@ class DiscountUpdateRequest(BaseModel):
     DISCOUNT_PERCENT: int
     DISCOUNT_CODE: str
 
+class EmptyDiscountResponse(BaseModel):
+    DISCOUNT_ID: str
+    MESSAGE: str
+
 class DiscountUpdateResponse(BaseModel):
     DISCOUNT_ID: str
     MESSAGE: str

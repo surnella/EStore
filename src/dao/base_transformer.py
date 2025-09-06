@@ -12,89 +12,7 @@ from db.dbsql import Product, ProductClass, Address, Customer, Items, Orders, Sh
 import db.constants as C
 
 class BaseDBTransformer:
-    debug=True
-
-    @staticmethod
-    def get_products_by_class(class_id: int):
-        """Return all products for a given product_class_id."""
-        stmt = (
-            select(Product)
-            .join(ProductClass, Product.c.PRODUCT_CLASS_CODE == ProductClass.c.PRODUCT_CLASS_CODE)
-            .where(ProductClass.c.PRODUCT_CLASS_CODE == class_id)
-        )
-        try:
-            with SessionLocal() as session:
-                result = session.execute(stmt).fetchall()
-                return result  # list of Row objects
-        except Exception as e:
-            print("Error getting products by class as list:", e)
-            raise
-
-    @staticmethod
-    def get_products_class():
-        """Return all products for a given product_class_id."""
-        stmt = (
-            select(ProductClass)
-        )
-        try:
-            with SessionLocal() as session:
-                result = session.execute(stmt).fetchall()
-                return result  # list of Row objects
-        except Exception as e:
-            print("Error getting products by class as list:", e)
-            raise
-
-    @staticmethod
-    def insert_product(product_data: dict):
-        stmt = Product.insert().values(**product_data)
-        try:
-            with SessionLocal() as session:
-                result = session.execute(stmt)
-                #session.commit()
-                return result.inserted_primary_key[0]
-        except Exception as e:
-            print("Error inserting product:", e)
-            raise
-
-    @staticmethod
-    def update_product(pk_value: int, update_dict: dict, pk_column=Product.c.PRODUCT_ID):
-        stmt = Product.update().where(pk_column == pk_value).values(**update_dict)
-        try:
-            with SessionLocal() as session:
-                session.execute(stmt)
-                #session.commit()
-        except Exception as e:
-            print("Error updating product:", e)
-            raise
-
-    @staticmethod
-    def delete_product(pk_value: int, pk_column=Product.c.PRODUCT_ID):
-        stmt = Product.delete().where(pk_column == pk_value)
-        try:
-            with SessionLocal() as session:
-                session.execute(stmt)
-                #session.commit()
-        except Exception as e:
-            print("Error deleting product:", e)
-            raise
-
-    @staticmethod
-    def get_products_by_class_df(class_id: int):
-        # Build SQLAlchemy Core select statement
-        stmt = (
-            select(Product)
-            .join(ProductClass, Product.c.PRODUCT_CLASS_CODE == ProductClass.c.PRODUCT_CLASS_CODE)
-            .where(ProductClass.c.PRODUCT_CLASS_CODE == class_id)
-        )
-        try:
-            # Use a session to get a connection
-            with SessionLocal() as session:
-                conn = session.connection()
-                df = pd.read_sql_query(stmt, conn) 
-                return df
-        except Exception as e:
-            print("Error getting products by calss as df:", e)
-            raise
+    debug=False
 
 # -------------------------GENERIC TABLE METHODS -----------------------------------------------------
     @staticmethod
@@ -173,6 +91,17 @@ class BaseDBTransformer:
         except Exception as e:
             print("Error getting filtered rows as df:", e)
             raise
+
+    def readdf(tname: str, pk_column: str, values: list):
+        tableC = Tables[tname]
+        if tableC is None:
+            return None
+        with SessionLocal() as session:
+            column = tableC.c[pk_column]
+            stmt = tableC.select().where(column.in_(values))
+            result = session.execute(stmt)
+            data = [dict(row._mapping) for row in result]  # row._mapping is dict-like
+            return pd.DataFrame(data)
 
     @staticmethod
     def insert_(session: Session, tname: str, data: dict):

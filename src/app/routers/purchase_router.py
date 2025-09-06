@@ -1,4 +1,4 @@
-from service.purchase_transformer import PurchaseTransformer
+from service.purchase_service import PurchaseService
 from schemas.purchase_schema import PurchaseResponse, PurchaseRequest, PurchaseDRequest
 from fastapi import APIRouter, HTTPException, status
 from typing import Any, Dict, Optional
@@ -12,14 +12,15 @@ def _handle_purchase_logic(customer_id: int, discount_id: Optional[str] = None) 
     """
     try:
         if discount_id is not None:
-            oid = PurchaseTransformer.purchase_discounted_cart_items(customer_id, discount_id)
+            oid = PurchaseService.purchase_discounted_cart_items(customer_id, discount_id)
         else:
-            oid = PurchaseTransformer.purchase_cart_items(customer_id)
+            oid = PurchaseService.purchase_cart_items(customer_id)
             
         return PurchaseResponse(
             ORDER_ID=oid,
             MESSAGE=f"Purchase successful. Order ID: {oid}"
         )
+    
     except Exception as e:
         # Log the detailed error for debugging
         print(f"Purchase transaction failed for customer {customer_id}: {e}")
