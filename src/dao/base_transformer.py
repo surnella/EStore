@@ -101,7 +101,10 @@ class BaseDBTransformer:
             stmt = tableC.select().where(column.in_(values))
             result = session.execute(stmt)
             data = [dict(row._mapping) for row in result]  # row._mapping is dict-like
-            return pd.DataFrame(data)
+            df = pd.DataFrame(data)
+            if(BaseDBTransformer.debug):
+                print(df)
+            return df
 
     @staticmethod
     def insert_(session: Session, tname: str, data: dict):

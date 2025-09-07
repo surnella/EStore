@@ -6,7 +6,7 @@ from dao.base_transformer import BaseDBTransformer
 import db.constants as C
 from sqlalchemy.exc import IntegrityError
 
-nprdcs = 2
+nprdcs = 50
 products = []
 product_class = []
 debug=True
@@ -17,7 +17,7 @@ def test_0001_data_creation_product_class():
     print(f"{inspect.currentframe().f_code.co_name}")
     for i in range(0,nprdcs):
         pc_dict = {}
-        pc_dict[C.ptyp] = 7000 + i
+        pc_dict[C.ptyp] = 4001 + i
         pc_dict[C.pdesc] = "Testing product class " + str(i)
         product_class.append(pc_dict)
     assert((i+1)==len(product_class))
@@ -28,14 +28,14 @@ def test_0002_data_creation_products():
     print(f"{inspect.currentframe().f_code.co_name}")
     for i in range(0,nprds):
         p_dict = {}
-        p_dict[C.pid] = 70000 + i
+        p_dict[C.pid] = 1000 + i
         p_dict[C.pname] = "Testing Product " + str(i)
-        p_dict[C.ptyp] = 7000 + i
-        p_dict[C.pavl] = 70 + i
-        p_dict[C.plen] = 75 + i
-        p_dict[C.wt] = 710 + i
-        p_dict[C.ht] = 720 + i
-        p_dict[C.wd] = 750 + i
+        p_dict[C.ptyp] = 4001 + i
+        p_dict[C.pavl] = 300
+        p_dict[C.plen] = 75
+        p_dict[C.wt] = 71 + i
+        p_dict[C.ht] = 42 + i
+        p_dict[C.wd] = 13 + i
         p_dict[C.mrp] = 790 + i
         products.append(p_dict)
     assert ((i+1) == len(products))
@@ -82,7 +82,7 @@ def test_1010_delete_product_class():
             assert(False)
     pc_cnt_o = BaseDBTransformer.tlen(C.prdc)
     if(debug):
-        print(f"inserted product class Records:\nInitial count {pc_cnt_i}, Final count{pc_cnt_o}. Rows deleted {rows_deleted}")
+        print(f"deleted product class Records:\nInitial count {pc_cnt_i}, Final count{pc_cnt_o}. Rows deleted {rows_deleted}")
     assert( pc_cnt_i == pc_cnt_o + rows_deleted)
 
 def test_1100_insert_product_class():

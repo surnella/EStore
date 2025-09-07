@@ -90,7 +90,7 @@ class PurchaseService():
 
         if (len(row) <=0 ):
             print("Discount_id is not valid, default to purcahse without discount")
-            return PurchaseTransformer.purchase_cart_items(cust_id, shipper_id, pay_mode, debug)
+            return PurchaseService.purchase_cart_items(cust_id, shipper_id, pay_mode, debug)
         
         disc_dict = row.to_dict(orient='records')[0]
         print( "Valid discount id = ", disc_dict)
@@ -137,5 +137,83 @@ class PurchaseService():
             print("Error: (Automatic rollback applied) while purchasing with discount items for. Order Id = ", res, e)
             raise
         return res
-    
-    # Transaction Methods ---------------------------------------------------Will commit the data or rollback. 
+
+    @staticmethod
+    def generate_invoice(cust_id: int):
+            orders = BaseDBTransformer.read(C.orders, **{C.custid:cust_id})
+            if(orders.empty):
+                print("Nor order from the customer_id = ", cust_id, " Nothing to geenrate. Aborting. ")
+                return None
+            orditems = BaseDBTransformer.readdf(C.items, C.ordid, orders[C.ordid].to_list())
+            if(orditems.empty):
+                print("Nor order from the customer_id = ", cust_id, " Nothing to geenrate. Aborting. ")
+                return None
+            products = BaseDBTransformer.readdf(C.prd, C.pid, orditems[C.pid].unique().tolist())
+            if(products.empty):
+                print( "No Valid product Ids. Nothing to generate for customer = ", cust_id)
+                return None
+            discs = BaseDBTransformer.readdf(C.discounts, C.did, orders[C.did].unique().tolist())
+            discs = discs.loc[discs[C.dpct] > 0, [C.did, C.dpct, C.dst]]
+            customer = BaseDBTransformer.readdf(C.custs, C.custid, [cust_id])
+            if(customer.empty):
+                print("Custoemr does not exist. Aborting.")
+                return None
+
+            customer_invoice = orders.merge(orditems, on=C.ordid).merge(products, on=C.pid).merge(discs, on=C.did, how='left')
+            customer_invoice["FINAL COST"] = (
+            customer_invoice[C.mrp].astype(float) *
+            customer_invoice[C.qnt] *
+            (100 - customer_invoice[C.dpct].fillna(0)) / 100
+            )
+            customer_invoice["ORIGINAL COST"] = (
+            customer_invoice[C.mrp].astype(float) *
+            customer_invoice[C.qnt]
+            )
+
+            cigrp_p = (
+                    customer_invoice.groupby([C.ordid, C.pid]).agg(
+                            order_number=(C.ordid, 'max'),
+                            Product_Name=(C.pname, 'max'),
+                            discount_code=(C.did, 'max'),
+                            discount_percentage=(C.dpct, 'max'),
+                            original_cost=('ORIGINAL COST', 'sum'),
+                            final_cost=('FINAL COST', 'sum')
+                    ).reset_index(level=1, drop=True)
+            )
+            cigrp_p['order'] =1
+
+            cigrp_o = (
+                    customer_invoice.groupby([C.ordid]).agg(
+                            order_number=(C.ordid, 'max'),
+                            Product_Name=(C.pname, lambda x: 'SUB TOTAL'),
+                            discount_code=(C.did, 'max'),
+                            discount_percentage=(C.dpct, 'max'),
+                            original_cost=('ORIGINAL COST', 'sum'),
+                            final_cost=('FINAL COST', 'sum')
+                    )
+            )
+            cigrp_o['order'] =0
+
+            cigrp_o.index = [f"SUMMARY-{idx}" for idx in cigrp_o.index]
+
+            cigrp_g = pd.DataFrame({
+                    "order_number": f"{customer.loc[0, C.custfn]} {customer.loc[0, C.custln]}",
+                    "Product_Name" : f"GRAND TOTAL - {customer.loc[0, C.custfn]} {customer.loc[0, C.custln]}",
+                    "discount_code"  : ",".join(customer_invoice[C.did].unique()),
+                    "discount_percentage" :f"Discount range {customer_invoice[C.dpct].min()} - {customer_invoice[C.dpct].max()}",
+                    "original_cost" : customer_invoice['ORIGINAL COST'].sum(), 
+                    "final_cost" : customer_invoice['FINAL COST'].sum()
+            }, index=['OVERALL SUMMARY'])
+            cigrp_g['order'] = 2
+
+            invoice = pd.concat([
+                    cigrp_p.fillna(0),
+                    cigrp_o.fillna(0),
+                    cigrp_g.fillna(0)
+            ])
+            invoice.index.name = "Order Numbers"
+            retdf = invoice.sort_values(by=['order_number', 'order', 'original_cost'], ascending=[True, True, True]).loc[:,['Product_Name','discount_code', "discount_percentage", 'original_cost', 'final_cost']]
+            # retdf.index.name = "Sno"
+            #print( f"Invoice for Customer {customer.loc[0, C.custfn]} {customer.loc[0, C.custln]}:\n\nTotal = {customer_invoice['FINAL COST'].sum()}\n")
+            return  retdf
+
