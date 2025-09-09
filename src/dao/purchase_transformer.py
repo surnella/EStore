@@ -8,23 +8,12 @@ class PurchaseTransformer():
     @staticmethod
     def list_orders_by_customer(cust_id: int):
         rows = BaseDBTransformer.readf(C.orders, **{C.custid: cust_id})
-        # Transform into dictionaries for JSON/UI
         return rows
     
     @staticmethod
     def list_all_orders():
         rows = BaseDBTransformer.read(C.orders)
-        # Transform into dictionaries for JSON/UI
         return rows
-
-    @staticmethod
-    def empty_cart(cust_id, debug=False):
-        # purchase is completed - Empty cart and Return Order ID. 
-        try:
-            BaseDBTransformer.delete(C.cart, cust_id, C.custid)
-        except Exception as e:
-            raise
-        return None
     
     @staticmethod
     def reverse_product_availbility(session: Session, order_id, debug=False):
@@ -40,7 +29,7 @@ class PurchaseTransformer():
                 prd_dict[C.pavl] = int(prd_dict[C.pavl]) + int( dict[C.qnt])
                 res = BaseDBTransformer.update_(session, C.prd, dict[C.pid], prd_dict)
                 if(debug):
-                    print( i, ": Update product availibility for ", dict[C.pid], " New:Change = ", 
+                    print( i, ": reverse product availibility for ", dict[C.pid], " New:Change = ", 
                           prd_dict[C.pavl] , ":",dict[C.qnt], " Return value = ", res)
         except Exception as e:
             raise
@@ -81,13 +70,16 @@ class PurchaseTransformer():
         return None
     
     @staticmethod
-    def deletePurchase(order_id: int, cust_id, discount_id: str, debug=False):
+    def deletePurchase(order_id: int, cust_id, discount_id: str=None, debug=False):
         try:
             with transaction() as session:
                 PurchaseTransformer.reverse_product_availbility(session, order_id, debug)
+                # Make sure Cart is empty first. 
+                BaseDBTransformer.delete_(session, C.cart, cust_id, C.custid)
                 BaseDBTransformer.delete_(session, C.items, order_id, C.ordid)
                 BaseDBTransformer.delete_(session, C.orders, order_id, C.ordid)
-                BaseDBTransformer.delete_(session, C.discounts, discount_id)
+                if( discount_id is not None):
+                    BaseDBTransformer.delete_(session, C.discounts, discount_id, C.did)
                 if(debug):
                     print("Undo a purchase success for order id = ", order_id)
         except Exception as e:

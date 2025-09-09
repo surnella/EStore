@@ -27,6 +27,30 @@ class PurchaseService():
     
     # Purcahse Methods ---------------------------------------------------Will commit the data or rollback on failure.
     
+    @staticmethod
+    def convert_cart_to_order(session: Session, cust_id, ordh, debug=False):
+        # Step 1: Check if there are items in the cart.
+        cust_cart = BaseDBTransformer.read(C.cart, **{C.custid: cust_id})
+        if( len(cust_cart) <= 0):
+            print("Cart is Empty, Nothing to Purcahase, Aborting ")
+            return None
+        
+        # Step 2: Items are there in the cart. Create an Order id. 
+        res = BaseDBTransformer.insert_(session, C.orders, ordh)
+        if(debug):
+            print("Order id created = ", res)
+
+        # iterate all the items
+        for i, dict in enumerate(cust_cart.to_dict(orient='records')):
+            ordi_dict = {}
+            ordi_dict[C.ordid] = res
+            ordi_dict[C.pid] = dict[C.pid]
+            ordi_dict[C.qnt] = dict[C.qnt]
+            resi = BaseDBTransformer.insert_(session, C.items,ordi_dict)
+            if(debug):
+                print("Inserted Order item retval = ", resi, " Content = ", ordi_dict)
+        return res
+
     # Purchase cart Items without discount
     @staticmethod
     def purchase_cart_items(cust_id, shipper_id=50001, pay_mode='Credit Card', debug=False):
@@ -43,27 +67,12 @@ class PurchaseService():
 
         try:
             with transaction() as session:
-                # Step 1: Check if there are items in the cart.
-                cust_cart = BaseDBTransformer.read(C.cart, **{C.custid: cust_id})
-                if( len(cust_cart) <= 0):
-                    print("Cart is Empty, Nothing to Purcahase, Aborting ")
+
+                # Step 1 and 2 - Convert cart to order - orderh and order items.
+                res = PurchaseService.convert_cart_to_order(session, cust_id, ordh_dict)
+                if( res is None):
                     return None
                 
-                # Step 2: Items are there in the cart. Create an Order id. 
-                res = BaseDBTransformer.insert_(session, C.orders, ordh_dict)
-                if(debug):
-                    print("Order id created = ", res)
-
-                # iterate all the items
-                for i, dict in enumerate(cust_cart.to_dict(orient='records')):
-                    ordi_dict = {}
-                    ordi_dict[C.ordid] = res
-                    ordi_dict[C.pid] = dict[C.pid]
-                    ordi_dict[C.qnt] = dict[C.qnt]
-                    resi = BaseDBTransformer.insert_(session, C.items,ordi_dict)
-                    if(debug):
-                        print("Inserted Order item retval = ", resi, " Content = ", ordi_dict)
-
                 # Step 3: Now that purchase is completed. Empty the Cart. 
                 PurchaseTransformer.empty_cart_after_purchase(session, cust_id, debug)
 
@@ -77,7 +86,7 @@ class PurchaseService():
 
     @staticmethod
     def deletePurchase(order_id, cust_id, debug=True):
-       ret =  PurchaseTransformer.deletePurchase(order_id, cust_id, DiscountTransformer.generate_discount_id(cust_id, order_id))
+       ret =  PurchaseTransformer.deletePurchase(order_id, cust_id, DiscountTransformer.generate_discount_id(order_id, cust_id), debug)
        return ret
     
     @staticmethod
@@ -107,25 +116,30 @@ class PurchaseService():
         # Step - 1 check if there are items in cart to purchase
         try:
             with transaction() as session:  
-                cust_cart = BaseDBTransformer.read(C.cart, **{C.custid: cust_id})
-                if( len(cust_cart) <= 0):
-                    print("Cart is Empty, Nothing to Purcahase, Aborting ")
-                    return None
+                # cust_cart = BaseDBTransformer.read(C.cart, **{C.custid: cust_id})
+                # if( len(cust_cart) <= 0):
+                #     print("Cart is Empty, Nothing to Purcahase, Aborting ")
+                #     return None
                 
-                # Step - 2 - There are items so create an order_id. 
-                res = BaseDBTransformer.insert_(session, C.orders,ordh_dict)
-                if(debug):
-                    print("Order id created = ", res)
+                # # Step - 2 - There are items so create an order_id. 
+                # res = BaseDBTransformer.insert_(session, C.orders,ordh_dict)
+                # if(debug):
+                #     print("Order id created = ", res)
 
-                # Step 3 - Now add the cart items into order items to complete purchase. 
-                for i, dict in enumerate(cust_cart.to_dict(orient='records')):
-                    ordi_dict = {}
-                    ordi_dict[C.ordid] = res
-                    ordi_dict[C.pid] = dict[C.pid]
-                    ordi_dict[C.qnt] = dict[C.qnt]
-                    resi = BaseDBTransformer.insert_(session, C.items,ordi_dict)
-                    if(debug):
-                        print("Inserted Order item retval = ", resi, " Content = ", ordi_dict)
+                # # Step 3 - Now add the cart items into order items to complete purchase. 
+                # for i, dict in enumerate(cust_cart.to_dict(orient='records')):
+                #     ordi_dict = {}
+                #     ordi_dict[C.ordid] = res
+                #     ordi_dict[C.pid] = dict[C.pid]
+                #     ordi_dict[C.qnt] = dict[C.qnt]
+                #     resi = BaseDBTransformer.insert_(session, C.items,ordi_dict)
+                #     if(debug):
+                #         print("Inserted Order item retval = ", resi, " Content = ", ordi_dict)
+
+                # Step 1 and 2 - Convert cart to order - orderh and order items.
+                res = PurchaseService.convert_cart_to_order(session, cust_id, ordh_dict)
+                if( res is None):
+                    return None
 
                 # Step 4: Empty the cart now as the purchase is done. 
                 PurchaseTransformer.empty_cart_after_purchase(session, cust_id, debug)

@@ -50,3 +50,12 @@ class CartTransformer():
         except Exception as e:
             print("Updating Cart Failed. Auto Rollback.", e)
         return
+
+    @staticmethod
+    def empty_cart(cust_id, debug=False):
+        # purchase is completed - Empty cart and Return Order ID. 
+        try:
+            BaseDBTransformer.delete(C.cart, cust_id, C.custid)
+        except Exception as e:
+            raise
+        return None

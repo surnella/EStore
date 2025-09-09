@@ -1,11 +1,12 @@
 import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import Table, MetaData, delete, select, update, func
+from sqlalchemy import Table, MetaData, delete, select, update, func, text
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.exc import IntegrityError
 from db.dbsql import SessionLocal, Tables
 from db.dbutil import transaction
+from pathlib import Path
 
 # Import all the tables as classes. Putting here make it available for all the upper layers. 
 from db.dbsql import Product, ProductClass, Address, Customer, Items, Orders, Shipper, Cart, Discount
@@ -13,6 +14,7 @@ import db.constants as C
 
 class BaseDBTransformer:
     debug=False
+    prj_root = None
 
 # -------------------------GENERIC TABLE METHODS -----------------------------------------------------
     @staticmethod
@@ -207,7 +209,33 @@ class BaseDBTransformer:
         except Exception as e:
             print(f"Error delete {tname}:{pk_column} with {pk_value}", e)
             raise         
+
+    @staticmethod
+    def delete_all_(session: Session, tname: str):
+        """Delete a row from the given table using primary key (or provided column)."""
+        tableC = Tables[tname]
+        if tableC is None:
+            raise ValueError(f"Table {tname} not found")
+
+        stmt = tableC.delete()
+        try:
+            result = session.execute(stmt)
+            if( result.rowcount == 0):
+                return 0
+        except Exception as e:
+            print(f"Error delete_all_ {tname} ", e)
+            raise
+        return result.rowcount
     
+    @staticmethod
+    def delete_all(tname: str):
+        try:
+            with transaction() as session:
+                return BaseDBTransformer.delete_all_(session, tname)
+        except Exception as e:
+            print(f"Error delete ALL {tname} ", e)
+            raise         
+
     def upsert_(session: Session, tname: str, update_dict: dict, inc_key: str):
         """
         Generic MySQL update that inserts values into table.
@@ -250,3 +278,64 @@ class BaseDBTransformer:
             print(f"Upsert is failing for {tname}:{inc_key} with {update_dict} {e}")
             raise
         return None
+
+    @staticmethod
+    def run_sql_script_(session: Session, script_path: str):
+        """Run a SQL script file using the given session."""
+        try:
+            with open(script_path, "r") as f:
+                sql_script = f.read()
+
+            # Some DB drivers don’t allow multiple statements at once
+            for stmt in sql_script.split(";"):
+                stmt = stmt.strip()
+                if stmt:
+                    session.execute(text(stmt))
+                    # print(stmt)
+
+        except Exception as e:
+            print(f"Error running SQL script {script_path}: ", e)
+            raise
+
+    @staticmethod
+    def run_sql_script(script_path: str):
+        try:
+            with transaction() as session:
+                BaseDBTransformer.run_sql_script_(session, script_path)
+        except Exception as e:
+            print(f"Error running SQL script {script_path}: ", e)
+            raise
+    
+    @staticmethod
+    def purge():
+        from pathlib import Path
+        print("Starting to purge all data and reinintialize it with the default and test data\n")
+        # Remove all the data
+        retval = BaseDBTransformer.delete_all(C.items)
+        retval = BaseDBTransformer.delete_all(C.cart)
+        retval = BaseDBTransformer.delete_all(C.orders)
+        retval = BaseDBTransformer.delete_all(C.discounts)
+        retval = BaseDBTransformer.delete_all(C.prd)
+        retval = BaseDBTransformer.delete_all(C.prdc)
+        
+        #Populate the defaults data - Run the SQL script file 
+        ROOT = BaseDBTransformer.get_project_root()  # go up from tests/ to project root
+        sql_path = ROOT / "data" / "ordersdb.sql"
+        print( sql_path, "\n", ROOT)
+        BaseDBTransformer.run_sql_script(sql_path)
+
+    @staticmethod
+    def get_project_root():
+        fullpath = Path(__file__).resolve()
+        # print(fullpath)
+        # print(ROOT.parent, ROOT.parents[0])
+        # print(ROOT.parent.parent, ROOT.parents[1])
+        # print(ROOT.parent.parent.parent, ROOT.parents[2])
+        # import importlib.resources as resources
+        # print( resources.files("EStore").joinpath("data/ordersdb.sql") )
+        for p in fullpath.parents:
+            if( p / "pyproject.toml").exists():
+                BaseDBTransformer.prj_root = Path(p)
+                # print(f"Project root folder found {p}")
+                break
+        return BaseDBTransformer.prj_root

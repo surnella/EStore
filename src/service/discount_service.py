@@ -17,13 +17,13 @@ class DiscountService():
         return rows
     
     @staticmethod
-    def list_all_codes():
-        rows = DiscountTransformer.list_all_codes()
+    def list_all_codes(cust_id: int = None):
+        rows = DiscountTransformer.list_all_codes(cust_id)
         return rows
 
     @staticmethod
-    def list_active_codes():
-        rows = DiscountTransformer.list_active_codes()
+    def list_active_codes(cust_id=None):
+        rows = DiscountTransformer.list_active_codes(cust_id)
         return rows
     
     @staticmethod

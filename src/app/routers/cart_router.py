@@ -30,12 +30,14 @@ def add_to_cart(request: CartUpdateRequest):
         print(request.CUSTOMER_ID)
         print(request.ITEMS)
         items_as_dicts = [item.model_dump() for item in request.ITEMS]
-        CartService.addToCart(request.CUSTOMER_ID, items_as_dicts, debug=True)
-        
-        print( " Returned from addToCart function after upsert")
+        retval = CartService.addToCart(request.CUSTOMER_ID, items_as_dicts, debug=True)
+        if( retval < 0):
+            msg=f"Request quantities are not avilable in the Store. Check availbility and add again."
+        else:
+            msg=f"Add to cart successful for customer {request.CUSTOMER_ID}"
         return CartResponse(
             CUSTOMER_ID=request.CUSTOMER_ID,
-            MESSAGE=f"Add to cart successful for customer {request.CUSTOMER_ID}"
+            MESSAGE=msg
         )
     except Exception as e:
         print(f"Cart addition not successful for customer {request.CUSTOMER_ID}: {e}")
@@ -51,11 +53,15 @@ def update_cart(request: CartUpdateRequest):
     """
     try: 
         items_as_dicts = [item.model_dump() for item in request.ITEMS]
-        CartService.updateCart(request.CUSTOMER_ID, items_as_dicts, debug=True)
+        retval = CartService.updateCart(request.CUSTOMER_ID, items_as_dicts, debug=True)
+        if( retval < 0):
+            msg=f"Request quantities are not avilable in the Store. Check availbility and add again."
+        else:
+            msg=f"Cart update successful for customer {request.CUSTOMER_ID}"
 
         return CartResponse(
             CUSTOMER_ID=request.CUSTOMER_ID,
-            MESSAGE=f"Cart update successful for customer {request.CUSTOMER_ID}"
+            MESSAGE=msg
         )
     except Exception as e:
         print(f"Cart update not successful for customer {request.CUSTOMER_ID}: {e}")

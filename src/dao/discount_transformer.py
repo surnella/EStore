@@ -8,7 +8,7 @@ class DiscountTransformer():
 
     @staticmethod
     def list_eligible_codes(cust_id: int):
-        rows = BaseDBTransformer.readf(C.discounts, **{C.custid+"__eq": cust_id, C.dst+"__eq":0})
+        rows = BaseDBTransformer.readf(C.discounts, **{C.custid+"__eq": cust_id, C.dst+"__eq":0, C.dpct + "__eq":0})
         return rows
     
     @staticmethod
@@ -17,13 +17,19 @@ class DiscountTransformer():
         return rows
     
     @staticmethod
-    def list_all_codes():
-        rows = BaseDBTransformer.read(C.discounts)
+    def list_all_codes(cust_id: int = None):
+        if( cust_id is None):
+            rows = BaseDBTransformer.read(C.discounts)
+        else:
+            rows = BaseDBTransformer.readf(C.discounts, **{C.custid+"__eq": cust_id})
         return rows
 
     @staticmethod
-    def list_active_codes():
-        rows = BaseDBTransformer.readf(C.discounts, **{C.dpct + "__gt":0, C.dst + "__eq":0})
+    def list_active_codes(cust_id=None):
+        if( cust_id is None):
+            rows = BaseDBTransformer.readf(C.discounts, **{C.dpct + "__gt":0, C.dst + "__eq":0, C.dpct + "__gt":0})
+        else:
+            rows = BaseDBTransformer.readf(C.discounts, **{C.custid+"__eq": cust_id, C.dpct + "__gt":0, C.dst + "__eq":0})
         return rows
     
     @staticmethod
@@ -32,7 +38,9 @@ class DiscountTransformer():
         if(debug):
             print("enable_discount_codes called with: ", row) 
 
-        if( (len(row) <= 0) | (percent <= 0)):
+        if( (len(row) <= 0) | (percent < 0)):
+            if(debug):
+                print(f"Entries = {len(row)} update with discount percent = {percent}")
             return None
         
         disc_dict = row.to_dict(orient='records')[0]

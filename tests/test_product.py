@@ -5,6 +5,10 @@ import inspect
 from dao.base_transformer import BaseDBTransformer
 import db.constants as C
 from sqlalchemy.exc import IntegrityError
+from service.product_service import ProductService
+import pandas as pd
+import pandas.testing as pdt
+from pathlib import Path
 
 nprdcs = 50
 products = []
@@ -12,8 +16,11 @@ product_class = []
 debug=True
 nprds = nprdcs+1
 
+@staticmethod
+def test_0010_data_clean_start():
+    BaseDBTransformer.purge()
 
-def test_0001_data_creation_product_class():
+def test_0100_data_creation_product_class():
     print(f"{inspect.currentframe().f_code.co_name}")
     for i in range(0,nprdcs):
         pc_dict = {}
@@ -24,7 +31,7 @@ def test_0001_data_creation_product_class():
     if(debug):
         print( "Created products class = ", len(product_class))
 
-def test_0002_data_creation_products():
+def test_0101_data_creation_products():
     print(f"{inspect.currentframe().f_code.co_name}")
     for i in range(0,nprds):
         p_dict = {}
@@ -154,3 +161,22 @@ def test_1110_insert_product():
     if(debug):
         print(f"inserted product class Records:\nInitial count {p_cnt_i}, Final count{p_cnt_o}. Rows inserted {rows_inserted}")
     assert(p_cnt_i + rows_inserted == p_cnt_o)
+
+def test_1120_product_service():
+    print(f"{inspect.currentframe().f_code.co_name}")
+    prds_aggs = []
+    prd_classes = ProductService.get_products_class()
+    for _, (_, row) in enumerate(prd_classes.iterrows()):
+        prd_class = row[C.ptyp]
+        prds_c = ProductService.list_products_in_class_df(prd_class)
+        prds_aggs.append(prds_c)
+    prds_agg_df = pd.concat(prds_aggs, ignore_index=True)
+    prds_all =ProductService.list_all_products()
+    assert (len(prds_agg_df) == len(prds_all))
+    pdt.assert_frame_equal(
+        prds_agg_df.sort_values(by=list(prds_agg_df.columns)).reset_index(drop=True),
+        prds_all.sort_values(by=list(prds_all.columns)).reset_index(drop=True),
+        check_dtype=False
+    )
+    if(debug):
+        print("Successfull test aggregation of class products with totals products\n")
