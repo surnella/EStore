@@ -7,7 +7,6 @@ class ProductService():
     @staticmethod
     def list_products_in_class_df(class_id: int):
         rows = ProductTransformer.get_products_by_class_df(class_id)
-        # Transform into dictionaries for JSON/UI
         return rows
 
     @staticmethod

@@ -3,7 +3,7 @@ from schemas.purchase_schema import PurchaseResponse, PurchaseRequest, PurchaseD
 from fastapi import APIRouter, HTTPException, status
 from typing import Any, Dict, Optional
 
-router = APIRouter(prefix="/Purchase", tags=["Purchase"])
+router = APIRouter(prefix="/purchase", tags=["Purchase"])
 
 # A helper function to reduce code duplication
 def _handle_purchase_logic(customer_id: int, discount_id: Optional[str] = None) -> PurchaseResponse:
@@ -17,8 +17,8 @@ def _handle_purchase_logic(customer_id: int, discount_id: Optional[str] = None) 
             oid = PurchaseService.purchase_cart_items(customer_id)
             
         return PurchaseResponse(
-            ORDER_ID=oid,
-            MESSAGE=f"Purchase successful. Order ID: {oid}"
+            ORDER_ID=0 if oid is None else oid,
+            MESSAGE=f"Purchase successful. Order ID: {oid}" if oid is not None else f"Nothing to Purchase. Purchase Aborted."
         )
     
     except Exception as e:

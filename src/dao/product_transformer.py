@@ -106,7 +106,7 @@ class ProductTransformer:
             raise
 
     @staticmethod
-    def get_products_by_class_df(class_id: int):
+    def get_products_by_class_df(class_id: int, debug=True):
         # Build SQLAlchemy Core select statement
         stmt = (
             select(Product)
@@ -117,9 +117,11 @@ class ProductTransformer:
             # Use a session to get a connection
             with SessionLocal() as session:
                 conn = session.connection()
-                df = pd.read_sql_query(stmt, conn) 
+                df = pd.read_sql_query(stmt, conn)
+                if( debug):
+                    print(df)
                 return df
         except Exception as e:
-            print("Error getting products by calss as df:", e)
+            print("Error getting products by class as df:", e)
             raise
 

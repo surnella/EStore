@@ -26,10 +26,16 @@ class CartService():
             prd_list = {}
             for i,dict in enumerate(products):
                 prd_list[dict[C.pid]] = dict[C.qnt]
+            # TO DO: Existing cart count needs to be added here. 
             prds = BaseDBTransformer.readdf(C.prd, C.pid, prd_list)
-            print( prds)
+            if ( (len(prds) <= 0) | len(prds) != len(prd_list)):
+                return False
+            # print( prds)
+            # print( prd_list)
             for i, (idx, prd) in enumerate(prds.iterrows()):
-                if( prd[C.pavl] < prd_list[dict[C.pid]]):
+                if( debug ):
+                    print(i, "Comparing: ", prd[C.pavl], " with ",  prd_list[prd[C.pid]] )
+                if( prd[C.pavl] < prd_list[prd[C.pid]]):
                     print(f" Request quantity not avilable, have {prd[C.pavl]} requested {prd_list[dict[C.pid]]} for product {prd}")
                     return False
             return True
@@ -39,12 +45,12 @@ class CartService():
     
     @staticmethod
     def addToCart(cust_id, products, debug=False):
-        if( CartService.checkAvailbility(products) ):
-            CartTransformer.addToCart(cust_id, products, debug)
-            return 0
+        if( CartService.checkAvailbility(products, debug) ):
+            print(" Adding to Cart")
+            return CartTransformer.addToCart(cust_id, products, debug)
         else:
             print("Some Items not avilabile")
-            return -1
+        return -1
         
     
     @staticmethod

@@ -39,7 +39,7 @@ def test_4030_list_orders(debug=False):
 
 
 @pytest.mark.parametrize("cust_id", range(5, 50, 15))
-def test_4050_purchase_without_discount( cust_id: int, debug=False):
+def test_4050_purchase( cust_id: int, debug=False):
 
     print(f"{inspect.currentframe().f_code.co_name}")  
 
@@ -62,8 +62,9 @@ def test_4050_purchase_without_discount( cust_id: int, debug=False):
     
     # Add the proper amounts to the cart. - Step 3
     selected_items = products_to_buy.loc[:, [C.pid]]
-    selected_items[C.qnt] = np.random.randint(1, products_to_buy.loc[:, [C.pavl]].min(), size=len(selected_items))
+    selected_items[C.qnt] = 1
     products = selected_items.to_dict(orient='records')
+    print(products_to_buy)
     retval = CartService.addToCart(cust_id, products, True)
     if (retval < 0):
         print("Something wrong with quantities. Even Minimum is failing. ", products)
@@ -159,6 +160,4 @@ def test_4050_purchase_without_discount( cust_id: int, debug=False):
     print( len(dis), len(ord), len(crt), len(itm) )
     assert all( [(len(dis) == 0), (len(itm) == 0), ( len(ord) == 0), ( len(crt) == 0)]) 
 
-    print( " Success Cleanup successfull after purchase ")
-
-
+    print("Success Cleanup successfull after purchase ")

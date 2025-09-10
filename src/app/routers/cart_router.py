@@ -27,12 +27,13 @@ def add_to_cart(request: CartUpdateRequest):
     Adds a list of items to a customer's cart.
     """
     try: 
-        print(request.CUSTOMER_ID)
-        print(request.ITEMS)
+        # print(request.CUSTOMER_ID)
+        # print(request.ITEMS)
         items_as_dicts = [item.model_dump() for item in request.ITEMS]
         retval = CartService.addToCart(request.CUSTOMER_ID, items_as_dicts, debug=True)
+        # print( "Outside CArt Service addToCart ", retval)
         if( retval < 0):
-            msg=f"Request quantities are not avilable in the Store. Check availbility and add again."
+            msg=f"Product OR the product Request quantities are not avilable in the Store at this time. "
         else:
             msg=f"Add to cart successful for customer {request.CUSTOMER_ID}"
         return CartResponse(

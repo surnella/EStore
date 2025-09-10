@@ -3,7 +3,7 @@ from schemas.discount_schema import DiscountResponse, DiscountRequest, DiscountU
 from fastapi import APIRouter, HTTPException, status
 from typing import Any, Dict, Optional, List, Union
 
-router = APIRouter(prefix="/Discount", tags=["Discount"])
+router = APIRouter(prefix="/discount", tags=["Discount"])
 
 @router.get("/all", response_model=Union[List[DiscountResponse], EmptyDiscountResponse])
 def get_all_codes():

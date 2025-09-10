@@ -20,6 +20,7 @@ class CartTransformer():
     @staticmethod
     def addToCart_(session: Session, cust_id, products, debug=False):
         try:
+            print(products)
             for i,dict in enumerate(products):
                 cart_dict = {}
                 cart_dict[C.custid] = cust_id
@@ -28,6 +29,7 @@ class CartTransformer():
                 if(debug):
                     print( "row: ", i, "=", cart_dict )
                 BaseDBTransformer.upsert_(session, C.cart, cart_dict, C.qnt)
+            return cust_id
         except Exception as e:
             print(" BaseDBTransformer: upsert failed", e)
             raise
@@ -36,20 +38,20 @@ class CartTransformer():
     def addToCart(cust_id, products, debug=False):
         try:
             with transaction() as session:
-                CartTransformer.addToCart_(session, cust_id, products, debug)
+                return CartTransformer.addToCart_(session, cust_id, products, debug) or -1
         except Exception as e:
             print("Adding to Cart Failed. Auto Rollback.", e)
-        return
+        return -1
     
     @staticmethod
     def updateCart(cust_id, products, debug=False):
         try:
             with transaction() as session:
                 BaseDBTransformer.delete_(session, C.cart, cust_id, C.custid)
-                CartTransformer.addToCart_(session, cust_id, products, debug)
+                return CartTransformer.addToCart_(session, cust_id, products, debug) or -1
         except Exception as e:
             print("Updating Cart Failed. Auto Rollback.", e)
-        return
+        return -1
 
     @staticmethod
     def empty_cart(cust_id, debug=False):
