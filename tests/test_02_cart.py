@@ -32,6 +32,9 @@ def test_2030_empty_cart( cust_id: int, debug=False):
 @pytest.mark.parametrize("cust_id", range(5, 50, 15))
 def test_2000_addto_cart(cust_id: int, debug=False ):
     print(f"{inspect.currentframe().f_code.co_name}")
+    # if( db_mode == "fake"):
+    #     assert(True)
+    #     return
     prds_10 = ProductService.getRandomProducts(10)
 
     prds_5 = prds_10.iloc[0:5]

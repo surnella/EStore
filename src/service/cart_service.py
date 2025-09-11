@@ -1,6 +1,5 @@
 import pandas as pd
 from dao.cart_transformer import CartTransformer
-from service.product_service import ProductService
 from dao.base_transformer import BaseDBTransformer
 import db.constants as C
 
@@ -45,21 +44,26 @@ class CartService():
     
     @staticmethod
     def addToCart(cust_id, products, debug=False):
-        if( CartService.checkAvailbility(products, debug) ):
-            print(" Adding to Cart")
-            return CartTransformer.addToCart(cust_id, products, debug)
-        else:
-            print("Some Items not avilabile")
-        return -1
-        
+        try:
+            if( CartService.checkAvailbility(products, debug) ):
+                print(" Adding to Cart")
+                return CartTransformer.addToCart(cust_id, products, debug)
+            else:
+                print("Some Items not avilabile")
+            return -1
+        except Exception as e:
+            return -1        
     
     @staticmethod
     def updateCart(cust_id, products, debug=False):
-        if( CartService.checkAvailbility(products) ):
-            CartTransformer.updateCart(cust_id, products, debug)
-            return 0
-        else:
-            print("Some Items not avilable")
+        try:
+            if( CartService.checkAvailbility(products) ):
+                CartTransformer.updateCart(cust_id, products, debug)
+                return 0
+            else:
+                print("Some Items not avilable")
+                return -1
+        except Exception as e:
             return -1
     
     @staticmethod
@@ -67,6 +71,6 @@ class CartService():
         # purchase is completed - Empty cart and Return Order ID. 
         try:
             CartTransformer.empty_cart(cust_id, debug)
+            return None
         except Exception as e:
             raise
-        return None

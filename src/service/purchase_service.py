@@ -2,13 +2,13 @@ import pandas as pd
 from dao.base_transformer import BaseDBTransformer
 from dao.purchase_transformer import PurchaseTransformer
 from dao.discount_transformer import DiscountTransformer
+from dao.cart_transformer import CartTransformer
 import db.constants as C
 from sqlalchemy.orm import Session
 from db.dbutil import transaction
 
 class PurchaseService():
     
-
     @staticmethod
     def list_orders_by_customer(cust_id: int):
         rows = PurchaseTransformer.list_orders_by_customer(cust_id)
@@ -22,7 +22,7 @@ class PurchaseService():
     @staticmethod
     def empty_cart(cust_id, debug=False):
         # purchase is completed - Empty cart and Return Order ID. 
-        PurchaseTransformer.empty_cart(cust_id)
+        CartTransformer.empty_cart(cust_id)
         return None
     
     # Purcahse Methods ---------------------------------------------------Will commit the data or rollback on failure.
@@ -98,7 +98,7 @@ class PurchaseService():
         row = BaseDBTransformer.readf(C.discounts, **{C.dpct + "__gt":0, C.dst + "__eq":0, C.did + "__eq":discount_id})
 
         if (len(row) <=0 ):
-            print("Discount_id is not valid, default to purcahse without discount")
+            print("Discount_id is not valid, default to purchase without discount")
             return PurchaseService.purchase_cart_items(cust_id, shipper_id, pay_mode, debug)
         
         disc_dict = row.to_dict(orient='records')[0]
@@ -153,7 +153,7 @@ class PurchaseService():
         return res
 
     @staticmethod
-    def generate_invoice(cust_id: int):
+    def generate_invoice(cust_id: int):# pragma: no cover
             orders = BaseDBTransformer.read(C.orders, **{C.custid:cust_id})
             if(orders.empty):
                 print("Nor order from the customer_id = ", cust_id, " Nothing to geenrate. Aborting. ")

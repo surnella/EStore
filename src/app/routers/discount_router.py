@@ -13,7 +13,7 @@ def get_all_codes():
     try:
         df = DiscountService.list_all_codes()
         if df.empty:
-            return {"DISCOUNT_ID": "N/A", "MESSAGE": "No discount (used, active or eligle) in EStore."}
+            return {"DISCOUNT_ID": "N/A", "MESSAGE": "No discounts are available (used, active or eligible) in EStore."}
         return df.to_dict(orient="records")
     except Exception as e:
         raise HTTPException(

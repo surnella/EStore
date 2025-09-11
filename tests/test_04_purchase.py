@@ -45,6 +45,8 @@ def test_4050_purchase( cust_id: int, debug=False):
 
     # Get Products to buy -- Step 1 
     products_to_buy = ProductService.getRandomProducts()
+    # Also empty cart just in case othere test leave something. 
+    PurchaseService.empty_cart(cust_id)
 
     avail_dict_ori = products_to_buy.set_index(C.pid)[C.pavl].to_dict()
     print( avail_dict_ori )

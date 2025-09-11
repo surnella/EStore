@@ -22,6 +22,7 @@ def test_0010_data_clean_start():
 
 def test_0100_data_creation_product_class():
     print(f"{inspect.currentframe().f_code.co_name}")
+    product_class.clear()
     for i in range(0,nprdcs):
         pc_dict = {}
         pc_dict[C.ptyp] = 4001 + i
@@ -33,6 +34,7 @@ def test_0100_data_creation_product_class():
 
 def test_0101_data_creation_products():
     print(f"{inspect.currentframe().f_code.co_name}")
+    products.clear()
     for i in range(0,nprds):
         p_dict = {}
         p_dict[C.pid] = 1000 + i
@@ -94,6 +96,9 @@ def test_1010_delete_product_class():
 
 def test_1100_insert_product_class():
     print(f"{inspect.currentframe().f_code.co_name}")
+    # if( db_mode ==  "fake"):
+    #     assert(True)
+    #     return
     pc_cnt_i = BaseDBTransformer.tlen(C.prdc)
     rows_inserted=0
     for i, dict in enumerate(product_class):
@@ -129,6 +134,9 @@ def test_1100_insert_product_class():
 
 def test_1110_insert_product():
     print(f"{inspect.currentframe().f_code.co_name}")
+    # if( db_mode ==  "fake"): 
+    #     assert(True)
+    #     return
     p_cnt_i = BaseDBTransformer.tlen(C.prd)
     rows_inserted=0
     for i, dict in enumerate(products):

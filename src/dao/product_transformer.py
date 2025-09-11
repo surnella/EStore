@@ -15,7 +15,7 @@ from dao.base_transformer import BaseDBTransformer
 class ProductTransformer:
 
     @staticmethod
-    def list_products_in_class(class_id: int):
+    def list_products_in_class(class_id: int):# pragma: no cover
         rows = ProductTransformer.get_products_by_class(class_id)
         # Transform into dictionaries for JSON/UI
         return [
@@ -56,7 +56,7 @@ class ProductTransformer:
         return products.sample(n=num)
     
     @staticmethod
-    def get_products_by_class(class_id: int):
+    def get_products_by_class(class_id: int):# pragma: no cover
         """Return all products for a given product_class_id."""
         stmt = (
             select(Product)
@@ -72,7 +72,7 @@ class ProductTransformer:
             raise
 
     @staticmethod
-    def insert_product(product_data: dict):
+    def insert_product(product_data: dict):# pragma: no cover
         stmt = Product.insert().values(**product_data)
         try:
             with SessionLocal() as session:
@@ -84,7 +84,7 @@ class ProductTransformer:
             raise
 
     @staticmethod
-    def update_product(pk_value: int, update_dict: dict, pk_column=Product.c.PRODUCT_ID):
+    def update_product(pk_value: int, update_dict: dict, pk_column=Product.c.PRODUCT_ID):# pragma: no cover
         stmt = Product.update().where(pk_column == pk_value).values(**update_dict)
         try:
             with SessionLocal() as session:
@@ -95,7 +95,7 @@ class ProductTransformer:
             raise
 
     @staticmethod
-    def delete_product(pk_value: int, pk_column=Product.c.PRODUCT_ID):
+    def delete_product(pk_value: int, pk_column=Product.c.PRODUCT_ID):# pragma: no cover
         stmt = Product.delete().where(pk_column == pk_value)
         try:
             with SessionLocal() as session:

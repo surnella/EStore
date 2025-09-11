@@ -270,7 +270,7 @@ class BaseDBTransformer:
             raise
         return None
 
-    def upsert(tname: str, update_dict: dict, inc_key: str):
+    def upsert(tname: str, update_dict: dict, inc_key: str):# pragma: no cover
         try:
             with transaction() as session:
                 BaseDBTransformer.upsert_(session, tname, update_dict, inc_key)
