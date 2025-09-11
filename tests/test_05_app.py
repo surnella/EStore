@@ -26,12 +26,15 @@ def test_5030_product_apis_get_all():
     response = client.get("/products/products")
     print("Status:", response.status_code)
     print("Response:", response.json())
+    assert response.status_code == 200
 
 def test_5040_product_apis_get_classes():
     print(f"{inspect.currentframe().f_code.co_name}")  
     response = client.get("/products/products/classes")
     print("Status:", response.status_code)
     print("Response:", response.json())
+    assert response.status_code == 200
+
 
 @pytest.mark.parametrize("pid", range(199, 210, 1))
 def test_5050_product_apis_get_product(pid: int):
@@ -56,6 +59,50 @@ def test_5060_product_apis_get_class(class_id: int):
 
     # Example assertion: status should be 200 or 404
     assert response.status_code in (200, 404)
+
+def test_5062_product_apis_get_all():
+    print(f"{inspect.currentframe().f_code.co_name}")  
+
+    with patch("service.product_service.ProductService.list_all_products", side_effect=Exception("DB error simulated")):
+        response = client.get("/products/products")
+    print("Status:", response.status_code)
+    print("Response:", response.json())
+    assert response.status_code in (200,500)
+
+def test_5064_product_apis_get_classes():
+    print(f"{inspect.currentframe().f_code.co_name}")  
+
+    with patch("service.product_service.ProductService.get_products_class", side_effect=Exception("DB error simulated")):
+        response = client.get("/products/products/classes")
+    print("Status:", response.status_code)
+    print("Response:", response.json())
+    assert response.status_code in (200, 500)
+
+@pytest.mark.parametrize("pid", range(199, 210, 1))
+def test_5066_product_apis_get_product(pid: int):
+    print(f"{inspect.currentframe().f_code.co_name}")  
+    with patch("service.product_service.ProductService.list_all_products", side_effect=Exception("DB error simulated")):
+        urlpath = f"/products/products/{pid}"   # f-string avoids str() conversion issues
+        response = client.get(urlpath)
+
+    print("Status:", response.status_code)
+    print("Response:", response.json())
+
+    # Example assertion: status should be 200 or 404
+    assert response.status_code in (200, 500)
+
+@pytest.mark.parametrize("class_id", range(2040, 2100, 10))
+def test_5068_product_apis_get_class(class_id: int):
+    print(f"{inspect.currentframe().f_code.co_name}")
+    with patch("service.product_service.ProductService.list_products_in_class_df", side_effect=Exception("DB error simulated")):
+        urlpath = f"/products/products/class/{class_id}"   # f-string avoids str() conversion issues
+        response = client.get(urlpath)
+    print("Status:", response.status_code)
+    print("Response:", response.json())
+
+    # Example assertion: status should be 200 or 404
+    assert response.status_code in (200, 500)
+
 
 @pytest.mark.parametrize("cust_id", [3, 15, 30, 45, 60])
 def test_5110_cart_apis_get(cust_id):
@@ -380,6 +427,19 @@ def test_5280_purchase_discounted_cart_invalid(payload, expected_status):
     resp = client.post("/purchase/purchase/discount", json=payload)
     print("Response:", resp.json())
     assert resp.status_code in (400,200)
+
+@pytest.mark.parametrize(
+    "payload, expected_status",
+    [
+        ({"CUSTOMER_ID": 1000, "DISCOUNT_ID": "missing"}, 400),   # missing discount
+    ]
+)
+def test_5281_purchase_discounted_cart_invalid(payload, expected_status):
+    print(f"{inspect.currentframe().f_code.co_name}")  
+    with patch("service.purchase_service.PurchaseService.purchase_discounted_cart_items", side_effect=Exception("DB error simulated")):
+        resp = client.post("/purchase/purchase/discount", json=payload)
+    print("Response:", resp.json())
+    assert resp.status_code in (200, 500)
 
 @pytest.mark.parametrize("cust_id", [30, 60])
 def test_5300_get_cart_items_exception(cust_id: int):

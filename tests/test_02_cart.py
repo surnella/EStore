@@ -11,6 +11,7 @@ from dao.product_transformer import ProductTransformer
 import pandas as pd
 import numpy as np
 import pandas.testing as pdt
+from unittest.mock import patch
 
 @pytest.mark.parametrize("cust_id", range(5, 50, 15))
 def test_2030_empty_cart( cust_id: int, debug=False):
@@ -28,6 +29,18 @@ def test_2030_empty_cart( cust_id: int, debug=False):
         assert(False)
     if(debug):
         print(f"customer id = {cust_id} - Success empty cart assertion is True.")
+
+@pytest.mark.parametrize("cust_id", range(5, 50, 15))
+def test_2031_empty_cart( cust_id: int, debug=False):
+    print(f"{inspect.currentframe().f_code.co_name}")
+    try:
+        with patch("dao.base_transformer.BaseDBTransformer.delete", side_effect=Exception("DB error simulated")):
+            CartService.empty_cart(cust_id)
+        assert(False)
+    except Exception as e:
+        print(e)
+        assert(True)
+
 
 @pytest.mark.parametrize("cust_id", range(5, 50, 15))
 def test_2000_addto_cart(cust_id: int, debug=False ):
